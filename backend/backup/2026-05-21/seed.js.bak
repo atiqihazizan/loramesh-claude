@@ -1,0 +1,251 @@
+// prisma/seed.js
+// Seed data untuk dev/pilot. Idempotent — safe untuk run berulang kali.
+
+import bcrypt from 'bcryptjs';
+import crypto from 'node:crypto';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
+
+const BCRYPT_ROUNDS = parseInt(process.env.BCRYPT_ROUNDS || '10', 10);
+
+// ============================================
+// LEVELS
+// ============================================
+const LEVELS = [
+  { code: 'SUPERADMIN',   name: 'Super Admin (Project)', rank: 100 },
+  { code: 'ADMIN_AGENCY', name: 'Admin Agency',          rank: 50  },
+  { code: 'USER_AGENCY',  name: 'User Agency',           rank: 10  },
+  { code: 'VIEWER',       name: 'Viewer',                rank: 1   },
+];
+
+// ============================================
+// DEVICE TYPES
+// ============================================
+const DEVICE_TYPES = [
+  { name: 'Mobile Tracker', code: 'MOBILE', icon: 'car',    color_code: '#3B82F6' },
+  { name: 'Static Sensor',  code: 'STATIC', icon: 'sensor', color_code: '#10B981' },
+  { name: 'LoRa Node',      code: 'LORA',   icon: 'radio',  color_code: '#F59E0B' },
+];
+
+// ============================================
+// MASTER SENSORS
+// ============================================
+const MASTER_SENSORS = [
+  {
+    name: 'Temperature',
+    short_name: 'temp',
+    description: 'Ambient temperature',
+    min_value: -40,
+    max_value: 85,
+    units: { default: 'celsius', options: ['celsius', 'fahrenheit'] },
+    unit: 'celsius',
+  },
+  {
+    name: 'Humidity',
+    short_name: 'hum',
+    description: 'Relative humidity (%)',
+    min_value: 0,
+    max_value: 100,
+    units: { default: 'percent' },
+    unit: 'percent',
+  },
+  {
+    name: 'Voltage',
+    short_name: 'volt',
+    description: 'DC voltage',
+    min_value: 0,
+    max_value: 48,
+    units: { default: 'volts' },
+    unit: 'volts',
+  },
+  {
+    name: 'Current',
+    short_name: 'curr',
+    description: 'DC current',
+    min_value: 0,
+    max_value: 100,
+    units: { default: 'amperes' },
+    unit: 'amperes',
+  },
+  {
+    name: 'Battery',
+    short_name: 'batt',
+    description: 'Battery percentage',
+    min_value: 0,
+    max_value: 100,
+    units: { default: 'percent' },
+    unit: 'percent',
+  },
+  {
+    name: 'Speed',
+    short_name: 'spd',
+    description: 'Vehicle speed',
+    min_value: 0,
+    max_value: 300,
+    units: { default: 'kmh', options: ['kmh', 'mph'] },
+    unit: 'kmh',
+  },
+];
+
+// ============================================
+// MAIN
+// ============================================
+async function main() {
+  console.log('═══════════════════════════════════════════════');
+  console.log('  Seed data');
+  console.log('═══════════════════════════════════════════════\n');
+
+  // ----- LEVELS -----
+  console.log('[seed] Levels...');
+  for (const lvl of LEVELS) {
+    await prisma.level.upsert({
+      where: { code: lvl.code },
+      update: { name: lvl.name, rank: lvl.rank },
+      create: lvl,
+    });
+  }
+  console.log(`[seed]   ✓ ${LEVELS.length} levels`);
+
+  // ----- DEVICE TYPES -----
+  console.log('[seed] Device types...');
+  for (const dt of DEVICE_TYPES) {
+    const existing = await prisma.device_type.findUnique({ where: { code: dt.code } });
+    if (!existing) {
+      await prisma.device_type.create({ data: dt });
+    } else {
+      await prisma.device_type.update({
+        where: { code: dt.code },
+        data: { name: dt.name, icon: dt.icon, color_code: dt.color_code },
+      });
+    }
+  }
+  console.log(`[seed]   ✓ ${DEVICE_TYPES.length} device types`);
+
+  // ----- MASTER SENSORS -----
+  console.log('[seed] Master sensors...');
+  for (const s of MASTER_SENSORS) {
+    const existing = await prisma.master_sensor.findFirst({ where: { name: s.name } });
+    if (!existing) {
+      await prisma.master_sensor.create({ data: s });
+    }
+  }
+  console.log(`[seed]   ✓ ${MASTER_SENSORS.length} master sensors`);
+
+  // ----- GLOBAL CONFIG -----
+  console.log('[seed] Global config...');
+  const configExists = await prisma.config.findFirst();
+  if (!configExists) {
+    await prisma.config.create({
+      data: { name: '', latlng: '3.1390,101.6869', zoom: 13 },
+    });
+  }
+  console.log('[seed]   ✓ Global config');
+
+  // ----- PILOT AGENCY -----
+  console.log('[seed] Pilot agency...');
+  let pilot = await prisma.agency.findUnique({ where: { code: 'PILOT' } });
+  if (!pilot) {
+    const token = crypto.randomBytes(32).toString('base64url');
+    pilot = await prisma.agency.create({
+      data: {
+        name: 'Pilot Agency',
+        code: 'PILOT',
+        agency_token: token,
+        status: true,
+        default_map_center: '3.1390,101.6869',
+        default_map_zoom: 13,
+        default_tile_provider: 'osm',
+        tracking_zoom_moving: 17,
+        tracking_zoom_stopped: 15,
+        tracking_stop_radius_m: 10,
+      },
+    });
+    console.log(`[seed]   ✓ Pilot agency created (token: ${token.slice(0, 12)}...)`);
+  } else {
+    console.log('[seed]   ✓ Pilot agency exists');
+  }
+
+  // ----- SUPERADMIN -----
+  console.log('[seed] SUPERADMIN user...');
+  const superLevel = await prisma.level.findUnique({ where: { code: 'SUPERADMIN' } });
+  let superuser = await prisma.users.findUnique({ where: { username: 'superadmin' } });
+  if (!superuser) {
+    const hash = await bcrypt.hash('superadmin123', BCRYPT_ROUNDS);
+    superuser = await prisma.users.create({
+      data: {
+        username: 'superadmin',
+        password: hash,
+        name: 'Super Administrator',
+        level_id: superLevel.id,
+        status: 'offline',
+        password_changed_at: new Date(),
+        must_change_password: true, // force change on first login
+      },
+    });
+    console.log('[seed]   ✓ SUPERADMIN created');
+    console.log('[seed]     username: superadmin');
+    console.log('[seed]     password: superadmin123  ⚠️ MUST CHANGE on first login');
+  } else {
+    console.log('[seed]   ✓ SUPERADMIN exists');
+  }
+
+  // ----- ADMIN_AGENCY untuk pilot -----
+  console.log('[seed] ADMIN_AGENCY user untuk Pilot...');
+  const adminLevel = await prisma.level.findUnique({ where: { code: 'ADMIN_AGENCY' } });
+  let admin = await prisma.users.findUnique({ where: { username: 'admin' } });
+  if (!admin) {
+    const hash = await bcrypt.hash('admin123', BCRYPT_ROUNDS);
+    admin = await prisma.users.create({
+      data: {
+        username: 'admin',
+        password: hash,
+        name: 'Pilot Admin',
+        level_id: adminLevel.id,
+        status: 'offline',
+        password_changed_at: new Date(),
+        must_change_password: true,
+      },
+    });
+    await prisma.user_agency.create({
+      data: { user_id: admin.id, agency_id: pilot.id },
+    });
+    console.log('[seed]   ✓ ADMIN_AGENCY created');
+    console.log('[seed]     username: admin');
+    console.log('[seed]     password: admin123  ⚠️ MUST CHANGE on first login');
+  } else {
+    // Make sure linked to pilot
+    const link = await prisma.user_agency.findUnique({
+      where: { user_id_agency_id: { user_id: admin.id, agency_id: pilot.id } },
+    });
+    if (!link) {
+      await prisma.user_agency.create({
+        data: { user_id: admin.id, agency_id: pilot.id },
+      });
+    }
+    console.log('[seed]   ✓ ADMIN_AGENCY exists');
+  }
+
+  console.log('\n═══════════════════════════════════════════════');
+  console.log('  Seed complete');
+  console.log('═══════════════════════════════════════════════');
+  console.log('');
+  console.log('Test login credentials:');
+  console.log('  superadmin / superadmin123  (SUPERADMIN)');
+  console.log('  admin      / admin123       (ADMIN_AGENCY, Pilot)');
+  console.log('');
+  console.log('Both users have must_change_password=true.');
+  console.log('First login response will indicate this.');
+  console.log('Call POST /api/auth/password to set new password.');
+  console.log('');
+}
+
+main()
+  .then(async () => {
+    await prisma.$disconnect();
+  })
+  .catch(async (e) => {
+    console.error('[seed] ❌ Failed:', e);
+    await prisma.$disconnect();
+    process.exit(1);
+  });

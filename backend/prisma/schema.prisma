@@ -1,0 +1,458 @@
+// ================================================================
+// LoRa Mesh Tracking — Unified Schema (claude v3)
+// Notes:
+//   - Database: MySQL (single unified DB, replaces old per-agency DBs)
+//   - Comments prefixed "// v3:" mark changes vs lama
+//   - Dynamic tables `playback_{device_id}` managed via raw SQL
+//     in lib/playbackManager.js (NOT defined here)
+// ================================================================
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+// ================================================================
+// AGENCY (multi-tenant root)
+// ================================================================
+model agency {
+  id           Int     @id @default(autoincrement())
+  name         String  @db.VarChar(100)
+  code         String  @unique @db.VarChar(50)
+  agency_token String  @unique @db.VarChar(100)
+  database_url String? @db.VarChar(500)              // legacy compat - null in unified mode
+  status       Boolean @default(true)
+
+  // v3: Map preferences per-agency
+  default_map_center      String? @db.VarChar(100)   // "3.1390,101.6869"
+  default_map_zoom        Int     @default(13)  @db.TinyInt
+  default_tile_provider   String  @default("osm") @db.VarChar(50)
+
+  // v3: Tracking behavior (used by frontend map auto-follow)
+  tracking_zoom_moving    Int @default(17) @db.TinyInt   // zoom when device moving
+  tracking_zoom_stopped   Int @default(15) @db.TinyInt   // zoom when device stopped
+  tracking_stop_radius_m  Int @default(10)               // meters to consider "stopped"
+
+  // v3: Session timeout override (null = use global default from env)
+  session_timeout_hours   Int? // e.g. 168 = 7 days, 24 = 1 day
+
+  created_at DateTime @default(now())   @db.Timestamp(0)
+  updated_at DateTime @updatedAt        @db.Timestamp(0)
+
+  user_agencies       user_agency[]
+  device_agencies     device_agency[]
+  sites               sites[]
+  device_logs_old     device_log[]         @relation("DeviceLogOldAgency")
+  device_logs_new     device_log[]         @relation("DeviceLogNewAgency")
+  live_tracking       live_tracking[]
+  provisioning_nonces provisioning_nonce[]
+
+  @@index([code],         map: "idx_agency_code")
+  @@index([status],       map: "idx_agency_status")
+  @@index([agency_token], map: "idx_agency_token")
+}
+
+// ================================================================
+// USER & ROLE
+// ================================================================
+model level {
+  id   Int    @id @default(autoincrement())
+  code String @unique @db.VarChar(50)  // SUPERADMIN | ADMIN_AGENCY | USER_AGENCY | VIEWER
+  name String @db.VarChar(100)
+  rank Int    @default(0)              // higher = more privileged
+
+  users users[]
+}
+
+enum users_device_type {
+  Web
+  Mobile
+  Tablet
+  Desktop
+}
+
+enum enrollment_request_status {
+  pending
+  approved
+  rejected
+}
+
+enum invitation_status {
+  pending
+  used
+  expired
+}
+
+enum login_logs_status {
+  success
+  failed
+}
+
+model users {
+  id                Int               @id @default(autoincrement())
+  username          String            @unique @db.VarChar(50)
+  password          String            @db.VarChar(255)
+  email             String?           @db.VarChar(100)
+  name              String?           @db.VarChar(100)
+  phone_number      String?           @db.VarChar(20)
+  level_id          Int
+  device_type       users_device_type @default(Web)
+  status            String?           @default("offline") @db.VarChar(50)
+  enrollment_status String?           @db.VarChar(50)
+
+  // v3: placeholder for future user-level UI preference
+  theme_preference  String?           @db.VarChar(20)
+
+  // v3: password change tracking
+  password_changed_at  DateTime? @db.Timestamp(0)
+  must_change_password Boolean   @default(false)
+
+  created_by Int?
+  created_at DateTime @default(now()) @db.Timestamp(0)
+  updated_at DateTime @updatedAt      @db.Timestamp(0)
+
+  level             level                 @relation(fields: [level_id], references: [id])
+  user_agencies     user_agency[]
+  login_logs        login_logs[]
+  reviewed_requests enrollment_requests[] @relation("ReviewedBy")
+  sent_invitations  user_invitations[]    @relation("InvitedBy")
+  used_invitations  user_invitations[]    @relation("UsedBy")
+
+  @@index([username], map: "idx_users_username")
+  @@index([level_id], map: "idx_users_level_id")
+  @@index([status],   map: "idx_users_status")
+}
+
+model user_agency {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  agency_id  Int
+  created_at DateTime @default(now()) @db.Timestamp(0)
+  updated_at DateTime @updatedAt      @db.Timestamp(0)
+
+  user   users  @relation(fields: [user_id],   references: [id], onDelete: Cascade)
+  agency agency @relation(fields: [agency_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, agency_id], map: "unique_user_agency")
+  @@index([user_id],   map: "idx_user_agency_user_id")
+  @@index([agency_id], map: "idx_user_agency_agency_id")
+}
+
+// ================================================================
+// DEVICE
+// ================================================================
+model devices {
+  id         Int    @id @default(autoincrement())
+  device_id  String @unique @db.VarChar(100)   // v3: renamed from `deviceid`
+  device_mac String? @db.VarChar(50)
+  name       String  @db.VarChar(255)
+  type_id    Int?    @db.UnsignedInt
+  data_type  String? @db.VarChar(20)           // MG | LR
+  status     String? @db.VarChar(50)
+
+  // Position (for static devices; mobile devices use live_tracking)
+  latitude   Float?  @db.Double
+  longitude  Float?  @db.Double
+  is_static  Boolean @default(false)
+
+  // v3: renamed from `need_log` for clarity
+  logging_enabled Boolean @default(true)
+
+  // v3: removed `curr_agency` — derive from device_agency where active=true
+
+  // v3: new — last time this device sent any data (used for historical sort)
+  last_seen_at DateTime? @db.Timestamp(0)
+
+  send_dt   DateTime? @db.Timestamp(0)
+  node_dt   DateTime? @db.Timestamp(0)
+
+  cpu_temp     Float? @db.Float                 // v3: renamed from `node_cpu_temp`
+  speed        Float? @db.Float
+  heading      Float? @db.Float                 // v3: new — for marker rotation
+  sensor_data  Json?
+  sensor_unit  Json?
+  metadata     Json?
+
+  created_at DateTime @default(now()) @db.Timestamp(0)
+  updated_at DateTime @updatedAt      @db.Timestamp(0)
+
+  device_type     device_type?    @relation(fields: [type_id], references: [id], onDelete: SetNull)
+  device_agencies device_agency[]
+  device_logs     device_log[]
+
+  @@index([device_id],       map: "idx_devices_device_id")
+  @@index([type_id],         map: "idx_devices_type_id")
+  @@index([status],          map: "idx_devices_status")
+  @@index([is_static],       map: "idx_devices_is_static")
+  @@index([logging_enabled], map: "idx_devices_logging")
+  @@index([device_mac],      map: "idx_devices_device_mac")
+  @@index([last_seen_at],    map: "idx_devices_last_seen")    // v3: new
+}
+
+model device_agency {
+  id             Int       @id @default(autoincrement())
+  device_id      Int
+  agency_id      Int
+  name           String?   @db.VarChar(255)   // per-agency device label
+  active         Boolean   @default(true)
+  assigned_at    DateTime  @default(now()) @db.Timestamp(0)
+  deactivated_at DateTime? @db.Timestamp(0)
+  created_at     DateTime  @default(now()) @db.Timestamp(0)
+  updated_at     DateTime  @updatedAt      @db.Timestamp(0)
+
+  device devices @relation(fields: [device_id], references: [id], onDelete: Cascade)
+  agency agency  @relation(fields: [agency_id], references: [id], onDelete: Cascade)
+
+  @@unique([device_id, agency_id], map: "unique_device_agency")
+  @@index([device_id],              map: "idx_device_agency_device_id")
+  @@index([agency_id],              map: "idx_device_agency_agency_id")
+  @@index([active],                 map: "idx_device_agency_active")
+  @@index([agency_id, active],      map: "idx_device_agency_agency_active") // v3: new
+  @@index([device_id, active],      map: "idx_device_agency_device_active")
+}
+
+model device_log {
+  id            Int      @id @default(autoincrement())
+  device_id     Int
+  old_agency_id Int?
+  new_agency_id Int
+  change_type   String?  @db.VarChar(50)
+  change_reason String?  @db.Text
+  changed_at    DateTime @default(now()) @db.Timestamp(0)
+  changed_by    Int?
+
+  device     devices @relation(fields: [device_id],     references: [id], onDelete: Cascade)
+  old_agency agency? @relation("DeviceLogOldAgency", fields: [old_agency_id], references: [id], onDelete: SetNull)
+  new_agency agency  @relation("DeviceLogNewAgency", fields: [new_agency_id], references: [id], onDelete: Cascade)
+
+  @@index([device_id],              map: "idx_device_log_device_id")
+  @@index([new_agency_id],          map: "idx_device_log_new_agency_id")
+  @@index([changed_at],             map: "idx_device_log_changed_at")
+  @@index([device_id, changed_at],  map: "idx_device_log_device_changed")
+}
+
+model device_type {
+  id         Int       @id @default(autoincrement()) @db.UnsignedInt
+  name       String?   @unique @db.VarChar(50)
+  code       String?   @unique @db.VarChar(50)
+  icon       String?   @db.VarChar(255)
+  color_code String?   @default("#808080") @db.VarChar(10)
+  created_at DateTime? @default(now()) @db.Timestamp(0)
+  updated_at DateTime  @updatedAt      @db.Timestamp(0)
+
+  devices       devices[]
+  live_tracking live_tracking[]
+
+  @@index([name], map: "idx_device_type_name")
+  @@index([code], map: "idx_device_type_code")
+}
+
+// ================================================================
+// LIVE TRACKING (current snapshot, one row per device)
+// History → playback_{device_id} dynamic tables
+// ================================================================
+model live_tracking {
+  id             Int    @id @default(autoincrement())
+  device_id      String @unique @db.VarChar(100)   // FK shape only (devices.device_id)
+  agency_id      Int
+  device_type_id Int? @db.UnsignedInt
+
+  latitude  Float? @db.Double
+  longitude Float? @db.Double
+  speed     Float? @db.Float
+  heading   Float? @db.Float                       // v3: new
+  accuracy  Float? @db.Float
+
+  status_live   String  @default("offline") @db.VarChar(20)   // online | offline | idle
+  motion_status String? @db.VarChar(20)                       // moving | idle
+
+  cpu_temp          Float?  @db.Float              // v3: renamed from node_cpu_temp
+  battery_level     Int?    @db.TinyInt
+  transmission_type String? @db.VarChar(50)
+  device_model      String? @db.VarChar(100)
+  device_os         String? @db.VarChar(50)
+
+  sensor_data Json?
+
+  send_dt     DateTime? @db.Timestamp(0)
+  node_dt     DateTime? @db.Timestamp(0)
+  received_at DateTime  @default(now()) @db.Timestamp(0)
+  updated_at  DateTime  @updatedAt      @db.Timestamp(0)
+
+  agency      agency       @relation(fields: [agency_id],      references: [id], onDelete: Cascade)
+  device_type device_type? @relation(fields: [device_type_id], references: [id], onDelete: SetNull)
+
+  @@index([device_id],   map: "idx_live_device_id")
+  @@index([agency_id],   map: "idx_live_agency_id")
+  @@index([status_live], map: "idx_live_status")
+  @@index([agency_id, status_live, updated_at], map: "idx_live_agency_status_updated") // v3: new
+}
+
+// ================================================================
+// SITES (per-agency monitoring zones)
+// ================================================================
+model sites {
+  id         Int       @id @default(autoincrement())
+  agency_id  Int                                          // v3: new — scope sites to agency
+  status     Boolean   @default(true)
+  zoom       Int       @default(13) @db.TinyInt
+  name       String?   @db.VarChar(70)
+  path       String?   @db.VarChar(255)                  // boundary geojson file path
+  latlng     String?   @db.VarChar(100)
+  tile_url   String?   @default("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png") @db.VarChar(200)
+  slug       String?   @db.VarChar(200)
+  publish    Boolean?  @default(false)
+  created_by Int       @default(0)
+  updated_by Int       @default(0)
+  created_at DateTime? @default(now()) @db.Timestamp(0)
+  updated_at DateTime? @updatedAt      @db.Timestamp(0)
+
+  agency agency @relation(fields: [agency_id], references: [id], onDelete: Cascade)
+
+  @@index([agency_id], map: "idx_sites_agency_id")
+  @@index([slug],      map: "idx_sites_slug")
+  @@index([publish],   map: "idx_sites_publish")
+}
+
+// ================================================================
+// CONFIG & MASTER DATA
+// ================================================================
+model config {
+  // Global system fallback (agency overrides this in agency.default_*)
+  id     Int     @id @default(autoincrement())
+  name   String  @default("") @db.VarChar(255)
+  latlng String? @db.VarChar(150)
+  zoom   Int     @default(13) @db.TinyInt
+}
+
+model master_sensor {
+  id          Int      @id @default(autoincrement())
+  name        String   @db.VarChar(100)
+  short_name  String?  @db.VarChar(50)
+  description String?  @db.Text
+  min_value   Float?
+  max_value   Float?
+  units       Json
+  unit        String?
+  created_at  DateTime @default(now()) @db.Timestamp(0)
+  updated_at  DateTime @updatedAt      @db.Timestamp(0)
+}
+
+// ================================================================
+// PROVISIONING (Flutter APK enrollment via deep link)
+// ================================================================
+model provisioning_nonce {
+  id         Int       @id @default(autoincrement())
+  nonce      String    @unique @db.VarChar(100)
+  agency_id  Int
+  used_at    DateTime?
+  expires_at DateTime  @db.Timestamp(0)
+  created_at DateTime  @default(now()) @db.Timestamp(0)
+
+  agency agency @relation(fields: [agency_id], references: [id], onDelete: Cascade)
+
+  @@index([nonce],      map: "idx_nonce")
+  @@index([agency_id],  map: "idx_nonce_agency")
+  @@index([expires_at], map: "idx_nonce_expires")
+}
+
+// ================================================================
+// ENROLLMENT (web user self-signup → approval flow)
+// ================================================================
+model enrollment_requests {
+  id               Int                       @id @default(autoincrement())
+  username         String                    @unique @db.VarChar(50)
+  password_hash    String                    @db.VarChar(255)
+  email            String?                   @db.VarChar(100)
+  phone_number     String?                   @db.VarChar(20)
+  device_type      users_device_type         @default(Web)
+  request_reason   String?                   @db.Text
+  status           enrollment_request_status @default(pending)
+  requested_at     DateTime                  @default(now()) @db.Timestamp(0)
+  reviewed_at      DateTime?                 @db.Timestamp(0)
+  reviewed_by      Int?
+  rejection_reason String?                   @db.Text
+  invitation_code  String?                   @unique @db.VarChar(50)
+  expires_at       DateTime?                 @db.Timestamp(0)
+
+  reviewer users? @relation("ReviewedBy", fields: [reviewed_by], references: [id])
+
+  @@index([status],       map: "idx_enrollment_status")
+  @@index([requested_at], map: "idx_enrollment_requested_at")
+}
+
+model user_invitations {
+  id              Int               @id @default(autoincrement())
+  invitation_code String            @unique @db.VarChar(50)
+  email           String            @db.VarChar(100)
+  invited_by      Int
+  invited_at      DateTime          @default(now()) @db.Timestamp(0)
+  expires_at      DateTime          @db.Timestamp(0)
+  used_at         DateTime?         @db.Timestamp(0)
+  used_by         Int?
+  status          invitation_status @default(pending)
+  user_level      Int               @default(0) @db.TinyInt
+
+  inviter users  @relation("InvitedBy", fields: [invited_by], references: [id], onDelete: Cascade)
+  user    users? @relation("UsedBy",    fields: [used_by],   references: [id])
+
+  @@index([status],     map: "idx_invitation_status")
+  @@index([expires_at], map: "idx_invitation_expires_at")
+  @@index([email],      map: "idx_invitation_email")
+}
+
+// ================================================================
+// LOGS
+// ================================================================
+model login_logs {
+  id          Int               @id @default(autoincrement())
+  user_id     Int?
+  username    String?           @db.VarChar(255)
+  status      login_logs_status
+  ip_address  String?           @db.VarChar(45)
+  device_type String?           @db.Text
+  timestamp   DateTime?         @default(now()) @db.Timestamp(0)
+
+  user users? @relation(fields: [user_id], references: [id])
+
+  @@index([user_id], map: "idx_login_logs_user_id")
+}
+
+model log_mqtt {
+  id          Int      @id @default(autoincrement())
+  topic       String   @db.VarChar(255)
+  message     Json
+  node_id     String?  @db.VarChar(100)
+  agency_id   Int?
+  received_at DateTime @default(now()) @db.Timestamp(0)
+
+  @@index([node_id],     map: "idx_log_mqtt_node_id")
+  @@index([agency_id],   map: "idx_log_mqtt_agency_id")
+  @@index([received_at], map: "idx_log_mqtt_received_at")
+}
+
+// ================================================================
+// PLAYBACK (dynamic tables, NOT in Prisma schema)
+// ================================================================
+// Table name pattern: playback_{sanitized_device_id}
+// Created on-demand via lib/playbackManager.js using raw SQL.
+// Standard columns:
+//   id            BIGINT       AUTO_INCREMENT PRIMARY KEY
+//   device_id     VARCHAR(100) NOT NULL
+//   latitude      DOUBLE       NULL
+//   longitude     DOUBLE       NULL
+//   speed         FLOAT        NULL
+//   heading       FLOAT        NULL
+//   accuracy      FLOAT        NULL
+//   cpu_temp      FLOAT        NULL
+//   battery_level TINYINT      NULL
+//   sensor_data   JSON         NULL
+//   status_live   VARCHAR(20)  NULL
+//   send_dt       TIMESTAMP    NULL
+//   received_at   TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
+//   INDEX idx_send_dt (send_dt)
+//   INDEX idx_device_send (device_id, send_dt)
