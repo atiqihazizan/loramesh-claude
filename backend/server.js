@@ -22,6 +22,8 @@ import apiRoutes from './routes/index.js';
 
 import { initSocketServer } from './realtime/socket-server.js';
 import { initMqttClient, disconnectMqtt, isMqttConnected } from './realtime/mqtt-client.js';
+import { startHeartbeatWatchdog, stopHeartbeatWatchdog } from './jobs/heartbeat-watchdog.js';
+import { startCacheCleanup, stopCacheCleanup } from './jobs/cache-cleanup.js';
 
 const app = express();
 
@@ -91,11 +93,16 @@ async function bootstrap() {
       console.log(`[server] ✓ HTTP + Socket.IO listening on port ${env.PORT}`);
       console.log(`[server] ✓ http://localhost:${env.PORT}/api/health/ping`);
       console.log('');
+
+      startHeartbeatWatchdog(30000);
+      startCacheCleanup();
     });
 
     // --- Graceful shutdown ---
     const shutdown = async (signal) => {
       console.log(`\n[server] ${signal} — shutting down...`);
+      stopHeartbeatWatchdog();
+      stopCacheCleanup();
       httpServer.close(async () => {
         await disconnectMqtt();
         await disconnectPrisma();

@@ -11,6 +11,7 @@ import devicesRoutes     from './devices.js';
 import sitesRoutes       from './sites.js';
 import provisionRoutes   from './provision.js';
 import nodesRoutes       from './nodes.js';
+import playbackRoutes    from './playback.js';
 
 const router = express.Router();
 
@@ -25,5 +26,6 @@ router.use('/devices',      devicesRoutes);
 router.use('/sites',        sitesRoutes);
 router.use('/provision',    provisionRoutes);
 router.use('/nodes',        nodesRoutes);
+router.use('/playback',     playbackRoutes);
 
 export default router;
