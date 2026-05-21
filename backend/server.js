@@ -106,7 +106,7 @@ async function bootstrap() {
       httpServer.close(async () => {
         await disconnectMqtt();
         await disconnectPrisma();
-        console.log('[server] ✓ Shutdown complete');
+        // console.log('[server] ✓ Shutdown complete');
         process.exit(0);
       });
       setTimeout(() => {

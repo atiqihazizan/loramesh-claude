@@ -30,7 +30,7 @@ export async function disconnectPrisma() {
   if (!connected) return;
   await prisma.$disconnect();
   connected = false;
-  console.log('[prisma] ✓ Disconnected');
+  // console.log('[prisma] ✓ Disconnected');
 }
 
 export default prisma;
