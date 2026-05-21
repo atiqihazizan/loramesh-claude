@@ -11,7 +11,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import prisma from '../lib/prisma.js';
-import { listKnownTables, loadKnownPlaybackTables, purgeOldPlayback } from '../lib/playback.js';
+import { listKnownTables, loadKnownPlaybackTables, dropOldPartitions } from '../lib/playback.js';
 
 /**
  * Buang playback row lebih lama dari `days` hari, untuk SEMUA device.
@@ -19,26 +19,26 @@ import { listKnownTables, loadKnownPlaybackTables, purgeOldPlayback } from '../l
 export async function purgeAllOlderThan(days) {
   await loadKnownPlaybackTables();
   const tables = listKnownTables();
-  const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+  const months = Math.max(1, Math.ceil(days / 30));
 
-  console.log(`[retention] Purge data sebelum ${cutoff.toISOString()} (${tables.length} tables)`);
+  console.log(`[retention] Purge partition lebih lama dari ~${months} bulan (${tables.length} tables)`);
 
-  let totalDeleted = 0;
+  let totalDropped = 0;
   for (const table of tables) {
     // table name = playback_{device_id} — extract device_id
     const deviceId = table.replace(/^playback_/, '');
     try {
-      const deleted = await purgeOldPlayback(deviceId, cutoff);
-      totalDeleted += deleted;
-      if (deleted > 0) {
-        console.log(`[retention]   ${table}: ${deleted} row dibuang`);
+      const dropped = await dropOldPartitions(deviceId, months);
+      totalDropped += dropped;
+      if (dropped > 0) {
+        console.log(`[retention]   ${table}: ${dropped} partition dibuang`);
       }
     } catch (e) {
       console.error(`[retention]   ${table}: error — ${e.message}`);
     }
   }
-  console.log(`[retention] ✓ Selesai — jumlah ${totalDeleted} row dibuang`);
-  return totalDeleted;
+  console.log(`[retention] ✓ Selesai — jumlah ${totalDropped} partition dibuang`);
+  return totalDropped;
 }
 
 /**

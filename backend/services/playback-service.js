@@ -1,5 +1,5 @@
 // services/playback-service.js
-// Query historical tracking dari playback_{device_id} tables.
+// Query historical tracking. Sokong downsampling untuk julat luas.
 
 import prisma from '../lib/prisma.js';
 import { ROLES } from '../config/constants.js';
@@ -9,18 +9,11 @@ import {
 } from '../lib/playback.js';
 import { parseTrackingDate } from '../utils/date.js';
 
-/**
- * Pastikan user boleh akses device ni (device mesti dalam agency dia).
- * Throw kalau tak.
- */
 async function assertDeviceAccess(deviceId, user) {
   const device = await prisma.devices.findUnique({
     where: { device_id: deviceId },
     include: {
-      device_agencies: {
-        where: { active: true },
-        select: { agency_id: true },
-      },
+      device_agencies: { where: { active: true }, select: { agency_id: true } },
     },
   });
   if (!device) {
@@ -29,9 +22,7 @@ async function assertDeviceAccess(deviceId, user) {
     throw err;
   }
   if (user.level.code !== ROLES.SUPERADMIN) {
-    const inAgency = device.device_agencies.some(
-      (da) => da.agency_id === user.agency?.id
-    );
+    const inAgency = device.device_agencies.some((da) => da.agency_id === user.agency?.id);
     if (!inAgency) {
       const err = new Error('Forbidden — device not in your agency');
       err.status = 403;
@@ -41,10 +32,6 @@ async function assertDeviceAccess(deviceId, user) {
   return device;
 }
 
-/**
- * Bounds — tarikh terawal/terakhir + jumlah row.
- * Frontend guna untuk had date picker.
- */
 export async function getBounds(deviceId, user) {
   await assertDeviceAccess(deviceId, user);
   const bounds = await getPlaybackBounds(deviceId);
@@ -57,14 +44,31 @@ export async function getBounds(deviceId, user) {
 }
 
 /**
- * Query track dalam julat tarikh.
+ * Downsample — kalau titik terlalu banyak, ambil sampel sekata.
+ * Mata manusia tak nampak beza, peta tetap smooth, frontend tak lag.
  *
- * @param {string} deviceId
+ * @param {Array} points
+ * @param {number} target - bilangan titik yang dikehendaki
+ */
+function downsample(points, target) {
+  if (points.length <= target) return points;
+  const step = points.length / target;
+  const out = [];
+  for (let i = 0; i < points.length; i += step) {
+    out.push(points[Math.floor(i)]);
+  }
+  // Pastikan titik terakhir sentiasa ada (penting untuk posisi akhir)
+  if (out[out.length - 1] !== points[points.length - 1]) {
+    out.push(points[points.length - 1]);
+  }
+  return out;
+}
+
+/**
+ * Query track.
+ *
  * @param {object} opts
- * @param {string|Date} opts.from
- * @param {string|Date} opts.to
- * @param {number} [opts.limit]
- * @param {string} [opts.order]  'asc'|'desc'
+ * @param {string} opts.resolution - 'full' (semua) | 'auto' (downsample jika >2000)
  */
 export async function getTrack(deviceId, user, opts) {
   await assertDeviceAccess(deviceId, user);
@@ -82,18 +86,29 @@ export async function getTrack(deviceId, user, opts) {
     throw err;
   }
 
-  const rows = await queryPlayback(deviceId, from, to, {
-    limit: opts.limit || 5000,
-    order: opts.order === 'desc' ? 'desc' : 'asc',
+  let rows = await queryPlayback(deviceId, from, to, {
+    limit: opts.limit || 50000,
+    order: 'asc',
   });
+
+  const rawCount = rows.length;
+  let downsampled = false;
+
+  // Downsample kalau resolution=auto dan titik > 2000
+  if (opts.resolution === 'auto' && rows.length > 2000) {
+    rows = downsample(rows, 2000);
+    downsampled = true;
+  }
 
   return {
     device_id: deviceId,
     from,
     to,
+    raw_count: rawCount,
     count: rows.length,
+    downsampled,
     points: rows.map((r) => ({
-      id: r.id != null ? String(r.id) : r.id,
+      id: r.id,
       latitude: r.latitude,
       longitude: r.longitude,
       speed: r.speed,
@@ -103,16 +118,13 @@ export async function getTrack(deviceId, user, opts) {
       battery_level: r.battery_level,
       sensor_data: r.sensor_data,
       status_live: r.status_live,
+      motion_status: r.motion_status,
       send_dt: r.send_dt,
       received_at: r.received_at,
     })),
   };
 }
 
-/**
- * Summary — ringkasan statistik untuk julat tarikh.
- * Jarak (haversine), kelajuan purata/max, tempoh.
- */
 export async function getSummary(deviceId, user, opts) {
   await assertDeviceAccess(deviceId, user);
 
@@ -124,25 +136,16 @@ export async function getSummary(deviceId, user, opts) {
     throw err;
   }
 
-  const rows = await queryPlayback(deviceId, from, to, {
-    limit: 50000,
-    order: 'asc',
-  });
+  const rows = await queryPlayback(deviceId, from, to, { limit: 50000, order: 'asc' });
 
   if (rows.length === 0) {
     return {
-      device_id: deviceId,
-      from,
-      to,
-      total_points: 0,
-      distance_km: 0,
-      avg_speed: 0,
-      max_speed: 0,
-      duration_minutes: 0,
+      device_id: deviceId, from, to,
+      total_points: 0, distance_km: 0,
+      avg_speed: 0, max_speed: 0, duration_minutes: 0,
     };
   }
 
-  // Kira jarak guna haversine antara titik berturut-turut
   let distanceM = 0;
   let maxSpeed = 0;
   let speedSum = 0;
@@ -157,13 +160,10 @@ export async function getSummary(deviceId, user, opts) {
     }
     if (i > 0) {
       const prev = rows[i - 1];
-      if (
-        prev.latitude != null && prev.longitude != null &&
-        r.latitude != null && r.longitude != null
-      ) {
+      if (prev.latitude != null && prev.longitude != null &&
+          r.latitude != null && r.longitude != null) {
         distanceM += haversineMeters(
-          prev.latitude, prev.longitude,
-          r.latitude, r.longitude
+          prev.latitude, prev.longitude, r.latitude, r.longitude
         );
       }
     }
@@ -171,15 +171,12 @@ export async function getSummary(deviceId, user, opts) {
 
   const firstDt = rows[0].send_dt ? new Date(rows[0].send_dt) : null;
   const lastDt = rows[rows.length - 1].send_dt
-    ? new Date(rows[rows.length - 1].send_dt)
-    : null;
-  const durationMin =
-    firstDt && lastDt ? Math.round((lastDt - firstDt) / 60000) : 0;
+    ? new Date(rows[rows.length - 1].send_dt) : null;
+  const durationMin = firstDt && lastDt
+    ? Math.round((lastDt - firstDt) / 60000) : 0;
 
   return {
-    device_id: deviceId,
-    from,
-    to,
+    device_id: deviceId, from, to,
     total_points: rows.length,
     distance_km: Math.round((distanceM / 1000) * 100) / 100,
     avg_speed: speedCount > 0 ? Math.round((speedSum / speedCount) * 10) / 10 : 0,
@@ -190,11 +187,8 @@ export async function getSummary(deviceId, user, opts) {
   };
 }
 
-/**
- * Haversine — jarak (meter) antara dua koordinat.
- */
 function haversineMeters(lat1, lon1, lat2, lon2) {
-  const R = 6371000; // jejari bumi meter
+  const R = 6371000;
   const toRad = (d) => (d * Math.PI) / 180;
   const dLat = toRad(lat2 - lat1);
   const dLon = toRad(lon2 - lon1);

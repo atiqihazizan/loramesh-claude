@@ -329,6 +329,24 @@ model config {
   zoom   Int     @default(13) @db.TinyInt
 }
 
+model tiles {
+  id    Int     @id @default(autoincrement())
+  name  String  @db.VarChar(100)
+  icon  String? @db.VarChar(100)
+  url   String  @db.Text
+  theme String  @default("light") @db.VarChar(20)
+}
+
+model playback_metadata {
+  device_id        String    @id @db.VarChar(100)
+  table_name       String    @db.VarChar(64)
+  retention_months Int       @default(60)
+  record_count     BigInt    @default(0)
+  oldest_record    DateTime? @db.Timestamp(0)
+  newest_record    DateTime? @db.Timestamp(0)
+  updated_at       DateTime? @updatedAt @db.Timestamp(0)
+}
+
 model master_sensor {
   id          Int      @id @default(autoincrement())
   name        String   @db.VarChar(100)
