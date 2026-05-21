@@ -13,6 +13,7 @@ dist/
 build/
 **/dist/
 **/build/
+**/backup/
 
 # Prisma
 **/.migration-progress.json
@@ -28,3 +29,6 @@ flutter/.flutter-plugins-dependencies
 *.log
 .vscode/
 .idea/
+
+
+*.bak
