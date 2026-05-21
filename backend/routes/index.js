@@ -6,7 +6,10 @@ import usersRoutes       from './users.js';
 import agenciesRoutes    from './agencies.js';
 import deviceTypesRoutes from './device-types.js';
 import sensorsRoutes     from './sensors.js';
-import healthRoutes      from './health.js';    // ← NEW
+import healthRoutes      from './health.js';
+import devicesRoutes     from './devices.js';     // ← NEW
+import sitesRoutes       from './sites.js';       // ← NEW
+import provisionRoutes   from './provision.js';   // ← NEW
 
 const router = express.Router();
 
@@ -16,6 +19,9 @@ router.use('/users',        usersRoutes);
 router.use('/agencies',     agenciesRoutes);
 router.use('/device-types', deviceTypesRoutes);
 router.use('/sensors',      sensorsRoutes);
-router.use('/health',       healthRoutes);      // ← NEW
+router.use('/health',       healthRoutes);
+router.use('/devices',      devicesRoutes);       // ← NEW
+router.use('/sites',        sitesRoutes);         // ← NEW
+router.use('/provision',    provisionRoutes);     // ← NEW
 
 export default router;
