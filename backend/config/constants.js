@@ -6,10 +6,10 @@
 // ROLES
 // ============================================
 export const ROLES = Object.freeze({
-  SUPERADMIN: 'SUPERADMIN',         // admin projek — manage agencies, system
-  ADMIN_AGENCY: 'ADMIN_AGENCY',     // admin user — manage users/devices dalam agency
-  USER_AGENCY: 'USER_AGENCY',       // user biasa — view map, historical
-  VIEWER: 'VIEWER',                  // read-only
+  SUPERADMIN: 'SUPERADMIN',
+  ADMIN_AGENCY: 'ADMIN_AGENCY',
+  USER_AGENCY: 'USER_AGENCY',
+  VIEWER: 'VIEWER',
 });
 
 export const ROLE_RANK = Object.freeze({
@@ -42,22 +42,31 @@ export const STATUS_LIVE_DEFAULT = STATUS_LIVE.OFFLINE;
 export const isStatusLiveValid = (s) => STATUS_LIVE_VALID.includes(s);
 
 // ============================================
-// DATA SOURCE & TYPE
+// DATA SOURCE (channel asal data — bukan device_type)
 // ============================================
 export const DATA_SOURCE = Object.freeze({
-  MQTT: 'mqtt',
-  SOCKETIO: 'socketio',
+  MQTT: 'mqtt',         // dari Flutter / LoRa Node-Red via MQTT broker
+  SOCKETIO: 'socketio', // dari frontend via Socket.IO (jarang — biasanya frontend receive sahaja)
 });
 
-export const DATA_TYPE = Object.freeze({
-  MODBUS_GO: 'MG',   // Flutter modbus_go (mobile)
-  LORA: 'LR',         // LoRa Node-Red
-});
+// ============================================
+// NOTA: data_type
+// ============================================
+// `data_type` dalam payload MQTT BUKAN enum tetap.
+// Ia adalah pointer ke `device_type.code` dalam DB.
+// Contoh nilai: ND, TD, LM, TB, WS, RF, GW, MG.
+// Resolve guna lib/cache/device-type-cache.js → getDeviceTypeByCode().
+// Jangan hard-code senarai data_type di sini — ia dinamik ikut DB.
 
+// ============================================
+// MOTION
+// ============================================
 export const MOTION_STATUS = Object.freeze({
   MOVING: 'moving',
   IDLE: 'idle',
 });
+
+export const MOTION_SPEED_THRESHOLD = 0.5; // m/s atau km/h — atas ni dikira "moving"
 
 export const SENSOR_SPECIAL = Object.freeze({
   NO_DATA: [-1],
@@ -69,16 +78,16 @@ export const SENSOR_SPECIAL = Object.freeze({
 // MQTT TOPICS
 // ============================================
 export const MQTT_TOPICS = Object.freeze({
-  // Flutter modbus_go (inbound)
-  MODBUSGO_BUNDLE: 'LoRa/tracking/+/bundle',
-  MODBUSGO_STATUS: 'LoRa/tracking/+/status',
-  MODBUSGO_BACKFILL: 'LoRa/tracking/+/backfill',
+  // Flutter modbus_go (inbound) — wildcard subscribe
+  MOBILE_BUNDLE:   'LoRa/tracking/+/bundle',
+  MOBILE_STATUS:   'LoRa/tracking/+/status',
+  MOBILE_BACKFILL: 'LoRa/tracking/+/backfill',
 
-  // Outbound to Flutter (function returns topic for given device)
-  modbusgoAck: (deviceId) => `LoRa/tracking/${deviceId}/ack`,
+  // Outbound ACK ke Flutter
+  mobileAck: (deviceId) => `LoRa/tracking/${deviceId}/ack`,
 
-  // LoRa Node-Red
-  LORA_NODE_DATA: 'LoRa/Node/Data/+',
+  // LoRa Node-Red / Gateway (inbound)
+  GATEWAY_DATA: 'LoRa/Node/Data/+',
 
   // System health
   SYSTEM_PING: 'LoRa/system/ping',
@@ -86,10 +95,24 @@ export const MQTT_TOPICS = Object.freeze({
 });
 
 // ============================================
-// AGENCY DEFAULTS (untuk create new agency)
+// SOCKET.IO EVENTS
+// ============================================
+export const SOCKET_EVENTS = Object.freeze({
+  // server → client
+  DEVICE_UPDATE: 'device:update',     // satu device update
+  DEVICE_BATCH:  'device:batch',      // banyak device sekali (initial load)
+  DEVICE_STATUS: 'device:status',     // status_live change sahaja
+  DEVICE_REMOVED: 'device:removed',
+
+  // client → server
+  SUBSCRIBE_AGENCY: 'subscribe:agency',
+});
+
+// ============================================
+// AGENCY DEFAULTS
 // ============================================
 export const AGENCY_DEFAULTS = Object.freeze({
-  MAP_CENTER: '3.1390,101.6869',       // Kuala Lumpur
+  MAP_CENTER: '3.1390,101.6869',
   MAP_ZOOM: 13,
   TILE_PROVIDER: 'osm',
   TRACKING_ZOOM_MOVING: 17,

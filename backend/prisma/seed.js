@@ -20,10 +20,18 @@ const LEVELS = [
 // ============================================
 // DEVICE TYPES
 // ============================================
+// ============================================
+// DEVICE TYPES (code = nilai data_type dalam payload)
+// ============================================
 const DEVICE_TYPES = [
-  { name: 'Mobile Tracker', code: 'MOBILE', icon: 'car',    color_code: '#3B82F6' },
-  { name: 'Static Sensor',  code: 'STATIC', icon: 'sensor', color_code: '#10B981' },
-  { name: 'LoRa Node',      code: 'LORA',   icon: 'radio',  color_code: '#F59E0B' },
+  { name: 'Node Data',       code: 'ND', icon: 'Network',   color_code: '#2196F3' },
+  { name: 'Tracking Data',   code: 'TD', icon: 'Car',       color_code: '#3F51B5' },
+  { name: 'LoRa Mesh',       code: 'LM', icon: 'Radio',     color_code: '#9C27B0' },
+  { name: 'Tank/BST',        code: 'TB', icon: 'Fuel',      color_code: '#FF5722' },
+  { name: 'Weather Station', code: 'WS', icon: 'CloudSun',  color_code: '#00BCD4' },
+  { name: 'Rain Fall',       code: 'RF', icon: 'CloudRain', color_code: '#009688' },
+  { name: 'Gateway',         code: 'GW', icon: 'RadioTower',color_code: '#795548' },
+  { name: 'Mobile Tracker',  code: 'MG', icon: 'Smartphone',color_code: '#4CAF50' },
 ];
 
 // ============================================
@@ -107,6 +115,29 @@ async function main() {
 
   // ----- DEVICE TYPES -----
   console.log('[seed] Device types...');
+  const canonicalCodes = DEVICE_TYPES.map((d) => d.code);
+
+  // Legacy Phase A codes → canonical (MOBILE shares name with MG)
+  const mobileLegacy = await prisma.device_type.findUnique({ where: { code: 'MOBILE' } });
+  const mgDef = DEVICE_TYPES.find((d) => d.code === 'MG');
+  if (mobileLegacy && mgDef && !canonicalCodes.includes('MOBILE')) {
+    const mgExists = await prisma.device_type.findUnique({ where: { code: 'MG' } });
+    if (!mgExists) {
+      await prisma.device_type.update({
+        where: { code: 'MOBILE' },
+        data: {
+          code: 'MG',
+          name: mgDef.name,
+          icon: mgDef.icon,
+          color_code: mgDef.color_code,
+        },
+      });
+    }
+  }
+  await prisma.device_type.deleteMany({
+    where: { code: { in: ['STATIC', 'LORA'] } },
+  });
+
   for (const dt of DEVICE_TYPES) {
     const existing = await prisma.device_type.findUnique({ where: { code: dt.code } });
     if (!existing) {
