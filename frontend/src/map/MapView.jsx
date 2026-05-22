@@ -19,6 +19,7 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import { buildMapStyle } from '../lib/mapStyle.js';
 import { useMapContext } from './MapContext.jsx';
 import MapControls from './MapControls.jsx';
+import DeviceLayer from './DeviceLayer.jsx';
 
 export default function MapView() {
   const { center, zoom, activeTile } = useMapContext();
@@ -60,6 +61,9 @@ export default function MapView() {
         attributionControl={{ compact: true }}
         style={{ width: '100%', height: '100%' }}
       >
+        {/* Marker device — agency terpilih */}
+        <DeviceLayer />
+
         {/* Kawalan zoom — sudut kanan bawah */}
         <MapControls />
       </Map>

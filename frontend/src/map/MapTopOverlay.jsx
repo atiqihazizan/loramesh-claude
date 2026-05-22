@@ -19,6 +19,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Radio, ChevronDown, LogOut, User } from 'lucide-react';
 import { useAuthStore } from '../store/authStore.js';
+import AgencyPicker from './AgencyPicker.jsx';
 import BasemapSwitcher from './BasemapSwitcher.jsx';
 
 export default function MapTopOverlay() {
@@ -58,12 +59,15 @@ export default function MapTopOverlay() {
         <span className="font-semibold text-slate-800">LoRa Mesh</span>
       </div>
 
-      {/* Kepingan kanan — KAD GABUNGAN: basemap | profil */}
+      {/* Kepingan kanan — KAD GABUNGAN: agency | basemap | profil */}
       <div className="absolute right-3 top-3 z-20">
         <div
           className="flex items-center gap-1 rounded-xl bg-white/95 p-1
                      shadow-lg ring-1 ring-slate-200 backdrop-blur"
         >
+          {/* Pemilih agency — render null jika bukan superadmin */}
+          <AgencyPicker />
+
           {/* Butang basemap — buka dropdown sendiri */}
           <BasemapSwitcher />
 
