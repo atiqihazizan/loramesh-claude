@@ -10,9 +10,9 @@ import { Map, History, Settings, Shield } from 'lucide-react';
 import { useAuthStore } from '../store/authStore.js';
 
 const navItems = [
-  { to: '/', icon: Map, label: 'Peta', end: true },
-  { to: '/historical', icon: History, label: 'Sejarah' },
-  { to: '/settings', icon: Settings, label: 'Tetapan' },
+  { to: '/', icon: Map, label: 'Map', end: true },
+  { to: '/historical', icon: History, label: 'History' },
+  { to: '/settings', icon: Settings, label: 'Settings' },
 ];
 
 export default function MapNavRail() {
@@ -37,7 +37,7 @@ export default function MapNavRail() {
           end={end}
           title={label}
           className={({ isActive }) =>
-            'flex items-center gap-3 rounded-xl px-3 py-2.5 ' +
+            'flex items-center gap-0 rounded-xl px-3 py-2.5 ' +
             'whitespace-nowrap transition-colors ' +
             (isActive
               ? 'bg-blue-600 text-white'
@@ -49,7 +49,7 @@ export default function MapNavRail() {
           <span
             className="max-w-0 overflow-hidden text-sm font-medium
                        opacity-0 transition-all duration-200
-                       group-hover:max-w-[120px] group-hover:opacity-100"
+                       group-hover:max-w-[120px] group-hover:opacity-100 group-hover:ml-2"
           >
             {label}
           </span>

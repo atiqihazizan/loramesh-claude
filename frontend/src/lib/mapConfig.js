@@ -6,7 +6,8 @@
 //   - Padan default_tile_provider legacy ke baris tiles
 // ----------------------------------------------------------------
 
-// Fallback keras — Kuala Lumpur. Susunan [lng, lat] (MapLibre).
+import { findTileByBasemapName } from './basemapLabels.js';
+// Fallback center — Kuala Lumpur. Order [lng, lat] (MapLibre).
 export const FALLBACK_CENTER = [101.6869, 3.139];
 export const FALLBACK_ZOOM = 13;
 
@@ -55,7 +56,7 @@ export function isRasterTile(url) {
  * DB legacy simpan nilai macam "osm" yang tak padan terus dengan
  * nama tiles ("Roadmap"/"Satelit"/"Terrain"). Padanan longgar:
  *   osm | roadmap | road | (kosong)  → Roadmap
- *   satelit | satellite | sat        → Satelit
+ *   satelit | satellite | sat        → Satellite (legacy DB: Satelit)
  *   terrain | topo                   → Terrain
  *   selainnya                        → Roadmap (lalai selamat)
  *
@@ -66,16 +67,11 @@ export function isRasterTile(url) {
 export function matchTileProvider(provider, tiles) {
   if (!Array.isArray(tiles) || tiles.length === 0) return null;
 
-  const byName = (name) =>
-    tiles.find((t) => t.name?.toLowerCase() === name.toLowerCase());
-
   const key = (provider || '').toLowerCase().trim();
 
   let wanted = 'Roadmap';
-  if (['satelit', 'satellite', 'sat'].includes(key)) wanted = 'Satelit';
+  if (['satelit', 'satellite', 'sat'].includes(key)) wanted = 'Satellite';
   else if (['terrain', 'topo'].includes(key)) wanted = 'Terrain';
-  // osm | roadmap | road | kosong | tak dikenali → kekal Roadmap
 
-  // Cuba padan nama yang dikehendaki; jika tiada, ambil baris pertama.
-  return byName(wanted) || tiles[0];
+  return findTileByBasemapName(tiles, wanted);
 }

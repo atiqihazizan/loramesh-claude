@@ -42,7 +42,7 @@ export default function App() {
             }
           >
             <Route path="/" element={<MapPage />} />
-            <Route path="/historical" element={<PlaceholderPage title="Sejarah" />} />
+            <Route path="/historical" element={<PlaceholderPage title="History" />} />
           </Route>
 
           {/* --- Kumpulan DASHBOARD — guna DashboardLayout (sidebar + kandungan) --- */}
@@ -53,7 +53,7 @@ export default function App() {
               </RequireAuth>
             }
           >
-            <Route path="/settings" element={<PlaceholderPage title="Tetapan" />} />
+            <Route path="/settings" element={<PlaceholderPage title="Settings" />} />
             <Route
               path="/admin"
               element={
@@ -65,7 +65,7 @@ export default function App() {
           </Route>
 
           {/* Apa-apa lain → 404 */}
-          <Route path="*" element={<PlaceholderPage title="404 — Tiada Halaman" />} />
+          <Route path="*" element={<PlaceholderPage title="404 — Page not found" />} />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>

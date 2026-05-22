@@ -1,19 +1,20 @@
 // src/map/DeviceMarker.jsx
 // ----------------------------------------------------------------
-// Satu marker device di peta.
+// Satu marker device — pin titisan + ikon Lucide + titik status.
 //
-// Warna ikut status — palet yang ditetapkan dalam reka bentuk:
-//   online  → hijau  #16A34A
-//   idle    → kuning #CA8A04
-//   offline → kelabu #94A3B8
-//
-// Marker = bulatan berwarna dengan cincin putih + bayang.
-// Klik → panggil onClick (DeviceLayer uruskan popup).
+// Ikut corak kod lama (wrapper-icon):
+//   - Pin bentuk titisan: border-radius 50% 50% 50% 0, putar -45°.
+//   - Badan pin berwarna device_type.color_code (lalai #808080).
+//   - Ikon Lucide di dalam, dipilih dari device_type.icon
+//     (putar +45° balik supaya tegak).
+//   - Titik status kecil di sudut: hijau online / kuning idle /
+//     kelabu offline.
 // ----------------------------------------------------------------
 
 import { Marker } from 'react-map-gl/maplibre';
+import * as LucideIcons from 'lucide-react';
 
-// Padan status → warna. Status tak dikenali → offline (kelabu).
+// Warna status — untuk titik kecil di sudut pin.
 const STATUS_COLOR = {
   online: '#16A34A',
   idle: '#CA8A04',
@@ -24,39 +25,80 @@ export function statusColor(status) {
   return STATUS_COLOR[(status || '').toLowerCase()] || STATUS_COLOR.offline;
 }
 
+// Warna pin — dari type.color_code, lalai kelabu.
+// Nota: medan dari /api/devices bernama `type` (bukan device_type).
+function typeColor(device) {
+  return device.type?.color_code || '#808080';
+}
+
+// Tukar nama ikon (cth "map-pin" / "Car") → komponen Lucide.
+// Lucide guna PascalCase. Jika tiada, guna MapPin.
+function resolveIcon(iconName) {
+  if (!iconName) return LucideIcons.MapPin;
+  const pascal = iconName
+    .split(/[-_\s]/)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join('');
+  return LucideIcons[pascal] || LucideIcons.MapPin;
+}
+
 /**
  * @param {object}   props
- * @param {object}   props.device     device (perlu latitude, longitude, status)
+ * @param {object}   props.device     device (latitude, longitude, status, device_type)
  * @param {boolean}  props.isSelected  marker ini sedang dipilih?
  * @param {Function} props.onClick     (device) => void
  */
 export default function DeviceMarker({ device, isSelected, onClick }) {
-  const color = statusColor(device.status);
+  const pinColor = typeColor(device);
+  const dotColor = statusColor(device.status);
+  const Icon = resolveIcon(device.type?.icon);
 
   return (
     <Marker
       longitude={device.longitude}
       latitude={device.latitude}
-      anchor="center"
+      anchor="bottom"
       onClick={(e) => {
-        // Halang klik daripada sampai ke peta (elak tutup popup).
         e.originalEvent.stopPropagation();
         onClick(device);
       }}
     >
       <div
-        className="cursor-pointer transition-transform"
-        style={{ transform: isSelected ? 'scale(1.3)' : 'scale(1)' }}
+        className="relative cursor-pointer transition-transform"
+        style={{ transform: isSelected ? 'scale(1.15)' : 'scale(1)' }}
       >
-        {/* Bulatan berwarna + cincin putih */}
+        {/* Pin titisan */}
         <div
           style={{
-            width: 18,
-            height: 18,
+            width: 30,
+            height: 30,
+            backgroundColor: pinColor,
+            border: '2px solid #ffffff',
+            borderRadius: '50% 50% 50% 0',
+            transform: 'rotate(-45deg)',
+            boxShadow: '0 3px 8px rgba(0,0,0,0.4)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          {/* Ikon — putar balik supaya tegak */}
+          <span style={{ transform: 'rotate(45deg)', display: 'flex' }}>
+            <Icon size={15} color="#ffffff" strokeWidth={2.5} />
+          </span>
+        </div>
+
+        {/* Titik status — sudut kanan atas pin */}
+        <span
+          style={{
+            position: 'absolute',
+            top: -2,
+            right: -2,
+            width: 10,
+            height: 10,
             borderRadius: '9999px',
-            backgroundColor: color,
-            border: '3px solid #ffffff',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.4)',
+            backgroundColor: dotColor,
+            border: '2px solid #ffffff',
           }}
         />
       </div>

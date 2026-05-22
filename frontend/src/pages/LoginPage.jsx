@@ -45,13 +45,13 @@ export default function LoginPage() {
           <h1 className="mt-4 text-xl font-semibold text-slate-800">
             LoRa Mesh
           </h1>
-          <p className="text-sm text-slate-500">Sistem Pemantauan & Penjejakan</p>
+          <p className="text-sm text-slate-500">Monitoring & Tracking System</p>
         </div>
 
         {/* Borang */}
         <form onSubmit={handleSubmit} className="card p-6 space-y-4">
           <div>
-            <label className="label">Nama Pengguna</label>
+            <label className="label">Username</label>
             <input
               className="input"
               value={username}
@@ -62,7 +62,7 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <label className="label">Kata Laluan</label>
+            <label className="label">Password</label>
             <div className="relative">
               <input
                 className="input pr-10"
@@ -92,7 +92,7 @@ export default function LoginPage() {
             className="btn-primary w-full"
             disabled={loading}
           >
-            {loading ? <Spinner size={18} className="text-white" /> : 'Log Masuk'}
+            {loading ? <Spinner size={18} className="text-white" /> : 'Sign in'}
           </button>
         </form>
 

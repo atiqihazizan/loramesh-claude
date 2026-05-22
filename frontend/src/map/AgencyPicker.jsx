@@ -46,8 +46,8 @@ export default function AgencyPicker() {
 
   const selected = agencies.find((a) => a.id === selectedAgencyId);
   const label = isLoading
-    ? 'Memuatkan…'
-    : selected?.name || 'Pilih agensi';
+    ? 'Loading…'
+    : selected?.name || 'Select agency';
 
   const handleSelect = (id) => {
     setSelectedAgencyId(id);
@@ -59,7 +59,7 @@ export default function AgencyPicker() {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        title="Tukar agensi"
+        title="Change agency"
         className="flex items-center gap-2 rounded-lg px-2.5 py-1.5
                    text-sm transition-colors hover:bg-slate-100"
       >

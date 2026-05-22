@@ -12,11 +12,13 @@
 import { useState, useRef, useEffect } from 'react';
 import { Map as MapIcon, Satellite, Mountain, Layers, Check } from 'lucide-react';
 import { useMapContext } from './MapContext.jsx';
+import { basemapDisplayName } from '../lib/basemapLabels.js';
 
-// Padan nama tile → ikon Lucide.
+// Padan nama tile → ikon Lucide (legacy + English names).
 const ICON_BY_NAME = {
   Roadmap: MapIcon,
   Satelit: Satellite,
+  Satellite: Satellite,
   Terrain: Mountain,
 };
 
@@ -51,7 +53,7 @@ export default function BasemapSwitcher() {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        title={`Basemap: ${activeTile?.name || '—'}`}
+        title={`Basemap: ${basemapDisplayName(activeTile?.name)}`}
         className="flex h-9 w-9 items-center justify-center rounded-lg
                    text-slate-600 transition-colors hover:bg-slate-100"
       >
@@ -81,7 +83,7 @@ export default function BasemapSwitcher() {
                 }
               >
                 <Icon size={16} strokeWidth={2} className="shrink-0" />
-                <span className="flex-1 text-left">{tile.name}</span>
+                <span className="flex-1 text-left">{basemapDisplayName(tile.name)}</span>
                 {isActive && <Check size={14} className="text-blue-600" />}
               </button>
             );

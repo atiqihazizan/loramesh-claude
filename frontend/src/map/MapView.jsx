@@ -43,7 +43,7 @@ export default function MapView() {
   if (!mapStyle) {
     return (
       <div className="flex h-full w-full items-center justify-center bg-slate-100">
-        <p className="text-slate-500">Menyediakan peta…</p>
+        <p className="text-slate-500">Preparing map…</p>
       </div>
     );
   }

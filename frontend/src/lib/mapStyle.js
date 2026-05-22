@@ -33,7 +33,7 @@ function buildRasterStyle(url, name) {
         // Esri World Imagery sokong hingga ~z19 di kebanyakan kawasan.
         maxzoom: 19,
         attribution:
-          name === 'Satelit'
+          name === 'Satelit' || name === 'Satellite'
             ? 'Imagery © Esri, Maxar, Earthstar Geographics'
             : '© ' + name,
       },

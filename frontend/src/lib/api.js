@@ -38,6 +38,6 @@ api.interceptors.response.use(
 );
 
 // Helper — extract mesej error yang kemas
-export function errMsg(err, fallback = 'Ralat berlaku') {
+export function errMsg(err, fallback = 'Something went wrong') {
   return err?.response?.data?.error || err?.message || fallback;
 }

@@ -6,9 +6,9 @@ import { Map, History, Settings, Shield } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore.js';
 
 const navItems = [
-  { to: '/', icon: Map, label: 'Peta', end: true },
-  { to: '/historical', icon: History, label: 'Sejarah' },
-  { to: '/settings', icon: Settings, label: 'Tetapan' },
+  { to: '/', icon: Map, label: 'Map', end: true },
+  { to: '/historical', icon: History, label: 'History' },
+  { to: '/settings', icon: Settings, label: 'Settings' },
 ];
 
 export default function Sidebar() {

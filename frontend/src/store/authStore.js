@@ -39,7 +39,7 @@ export const useAuthStore = create((set, get) => ({
       set({ user, token, error: null });
       return { ok: true, user };
     } catch (err) {
-      const msg = err?.response?.data?.error || 'Log masuk gagal';
+      const msg = err?.response?.data?.error || 'Sign-in failed';
       set({ error: msg });
       return { ok: false, error: msg };
     }

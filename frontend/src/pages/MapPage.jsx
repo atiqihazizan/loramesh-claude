@@ -20,7 +20,7 @@ export default function MapPage() {
       <div className="flex h-full w-full items-center justify-center bg-slate-50">
         <div className="flex flex-col items-center gap-3">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-300 border-t-blue-600" />
-          <p className="text-sm text-slate-500">Memuatkan peta…</p>
+          <p className="text-sm text-slate-500">Loading map…</p>
         </div>
       </div>
     );
@@ -31,9 +31,9 @@ export default function MapPage() {
     return (
       <div className="flex h-full w-full items-center justify-center bg-slate-50">
         <div className="max-w-sm rounded-xl bg-white p-6 text-center shadow-sm ring-1 ring-slate-200">
-          <p className="font-medium text-slate-800">Gagal memuatkan peta</p>
+          <p className="font-medium text-slate-800">Failed to load map</p>
           <p className="mt-1 text-sm text-slate-500">
-            {errMsg(error, 'Tidak dapat ambil data peta dari pelayan.')}
+            {errMsg(error, 'Could not fetch map data from the server.')}
           </p>
         </div>
       </div>

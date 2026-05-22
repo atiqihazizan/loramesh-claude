@@ -86,7 +86,7 @@ export default function MapTopOverlay() {
                 <User size={15} className="text-blue-700" />
               </div>
               <span className="hidden text-sm font-medium text-slate-700 sm:block">
-                {user?.name || user?.username || 'Pengguna'}
+                {user?.name || user?.username || 'User'}
               </span>
               <ChevronDown size={15} className="text-slate-400" />
             </button>
@@ -101,7 +101,7 @@ export default function MapTopOverlay() {
                 {/* Nama agency — papar dalam dropdown */}
                 {user?.agency && (
                   <div className="border-b border-slate-100 px-4 py-2.5">
-                    <p className="text-xs text-slate-400">Agensi</p>
+                    <p className="text-xs text-slate-400">Agency</p>
                     <p className="text-sm font-medium text-slate-700">
                       {user.agency.name}
                     </p>
@@ -114,7 +114,7 @@ export default function MapTopOverlay() {
                              hover:bg-slate-50"
                 >
                   <LogOut size={15} className="text-slate-400" />
-                  Log keluar
+                  Log out
                 </button>
               </div>
             )}

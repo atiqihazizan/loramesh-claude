@@ -77,7 +77,7 @@ export default function TopBar() {
                            text-red-600 hover:bg-red-50 transition-colors"
               >
                 <LogOut size={15} />
-                Log Keluar
+                Log out
               </button>
             </div>
           )}

@@ -5,7 +5,7 @@ export default function PlaceholderPage({ title }) {
   return (
     <div className="h-full flex flex-col items-center justify-center text-slate-400">
       <p className="text-lg font-medium">{title}</p>
-      <p className="text-sm mt-1">Halaman ini akan dibina dalam fasa seterusnya.</p>
+      <p className="text-sm mt-1">This page will be built in a later phase.</p>
     </div>
   );
 }
