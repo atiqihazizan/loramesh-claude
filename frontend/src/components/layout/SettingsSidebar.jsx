@@ -1,0 +1,72 @@
+// E3-a — settings sidebar: app exit links + settings sub-nav (role-gated)
+
+import { NavLink } from 'react-router-dom';
+import {
+  ArrowLeft,
+  Building2,
+  History,
+  Map,
+  UserCircle,
+  Users,
+} from 'lucide-react';
+import { useAuthStore } from '../../store/authStore.js';
+
+const appLinkClass = ({ isActive }) =>
+  `flex items-center gap-3 px-4 py-2.5 mx-2 rounded-lg transition-colors whitespace-nowrap text-sm ${
+    isActive
+      ? 'bg-slate-100 text-slate-800'
+      : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'
+  }`;
+
+const settingsLinkClass = ({ isActive }) =>
+  `flex items-center gap-3 px-4 py-2.5 mx-2 rounded-lg transition-colors whitespace-nowrap ${
+    isActive
+      ? 'bg-brand-50 text-brand-700'
+      : 'text-slate-600 hover:bg-slate-100'
+  }`;
+
+export default function SettingsSidebar() {
+  const isAgencyAdmin = useAuthStore((s) => s.isAgencyAdmin());
+
+  return (
+    <aside
+      className="w-52 shrink-0 bg-white border-r border-slate-200 flex flex-col py-4 z-20"
+      aria-label="Settings navigation"
+    >
+      <p className="px-4 mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400 flex items-center gap-1.5">
+        <ArrowLeft size={12} aria-hidden />
+        Back to app
+      </p>
+      <NavLink to="/" end className={appLinkClass}>
+        <Map size={18} className="shrink-0" />
+        <span className="font-medium">Map</span>
+      </NavLink>
+      <NavLink to="/historical" className={appLinkClass}>
+        <History size={18} className="shrink-0" />
+        <span className="font-medium">Historical</span>
+      </NavLink>
+
+      <hr className="my-4 mx-4 border-slate-200" />
+
+      <p className="px-4 mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
+        Settings
+      </p>
+      {isAgencyAdmin ? (
+        <>
+          <NavLink to="/settings/agency" className={settingsLinkClass}>
+            <Building2 size={18} className="shrink-0" />
+            <span className="text-sm font-medium">Agency Settings</span>
+          </NavLink>
+          <NavLink to="/settings/users" className={settingsLinkClass}>
+            <Users size={18} className="shrink-0" />
+            <span className="text-sm font-medium">Users</span>
+          </NavLink>
+        </>
+      ) : null}
+      <NavLink to="/settings/account" className={settingsLinkClass}>
+        <UserCircle size={18} className="shrink-0" />
+        <span className="text-sm font-medium">My Account</span>
+      </NavLink>
+    </aside>
+  );
+}
