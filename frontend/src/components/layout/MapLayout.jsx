@@ -2,24 +2,22 @@
 // Layout PETA — peta penuh skrin, navigasi terapung di atas.
 // Untuk halaman peta-sentrik: Peta (dan Historical nanti — E4).
 //
-// E2-shell-fix: MapLayout kini PEMILIK data peta. Ia bungkus
-// segalanya dengan <MapProvider> — yang panggil useMapData sekali
-// dan simpan activeTile. MapPage, MapView, MapTopOverlay semua
-// berkongsi data ini melalui useMapContext().
+// E2-shell-fix: MapLayout PEMILIK data peta — bungkus <MapProvider>.
+// E2-ptz: tambah Map3DToggle + MapCompass ke overlay.
 //
-// Struktur:
-//   <MapProvider>
-//     <div penuh skrin, relative>
-//       <Outlet />            ← halaman peta (lapisan bawah)
-//       <MapNavRail />        ← rel navigasi ikon terapung (kiri)
-//       <MapTopOverlay />     ← logo + kad basemap/profil (atas)
-//     </div>
-//   </MapProvider>
+// Susun atur terapung:
+//   kiri-atas    : logo + nama
+//   kanan-atas   : kad [basemap | profil]
+//   kiri-tengah  : MapNavRail
+//   kanan-bawah  : zoom (MapControls) + Map3DToggle (atasnya)
+//   kiri-bawah   : bar skala + MapCompass
 
 import { Outlet } from 'react-router-dom';
 import { MapProvider } from '../../map/MapContext.jsx';
 import MapNavRail from '../../map/MapNavRail.jsx';
 import MapTopOverlay from '../../map/MapTopOverlay.jsx';
+import Map3DToggle from '../../map/Map3DToggle.jsx';
+import MapCompass from '../../map/MapCompass.jsx';
 
 export default function MapLayout() {
   return (
@@ -33,6 +31,10 @@ export default function MapLayout() {
         {/* Overlay — navigasi terapung di atas peta */}
         <MapNavRail />
         <MapTopOverlay />
+
+        {/* Overlay — kawalan 3D */}
+        {/* <Map3DToggle />
+        <MapCompass /> */}
       </div>
     </MapProvider>
   );

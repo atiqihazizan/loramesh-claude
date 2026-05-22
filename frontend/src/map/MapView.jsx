@@ -55,7 +55,7 @@ export default function MapView() {
         initialViewState={initialViewState}
         mapStyle={mapStyle}
         // Kawalan 3D — condong + pusing.
-        maxPitch={75}
+        maxPitch={85}
         dragRotate
         pitchWithRotate
         attributionControl={{ compact: true }}
