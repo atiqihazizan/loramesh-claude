@@ -59,16 +59,17 @@ export default function DeviceDetailPanel() {
       ? devices.find((d) => d.device_id === selectedDeviceId) || null
       : null;
 
-  // Jalankan animasi dua peringkat bila device dipilih.
+  // Animasi hanya bila pilihan device berubah (klik marker / tutup),
+  // bukan bila data socket kemas kini objek device yang sama.
   useEffect(() => {
-    if (!device) {
+    if (selectedDeviceId == null) {
       setStage(0);
       return;
     }
-    setStage(1); // header dahulu
-    const t = setTimeout(() => setStage(2), 180); // kemudian badan
+    setStage(1);
+    const t = setTimeout(() => setStage(2), 180);
     return () => clearTimeout(t);
-  }, [device]);
+  }, [selectedDeviceId]);
 
   if (!device) return null;
 
