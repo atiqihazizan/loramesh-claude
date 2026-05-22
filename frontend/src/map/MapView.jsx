@@ -2,35 +2,30 @@
 // ----------------------------------------------------------------
 // Komponen peta MapLibre penuh skrin (react-map-gl/maplibre).
 //
-// E2-core: peta + boleh condong/pusing + tukar basemap + kawalan.
-// TIADA marker, TIADA terrain DEM lagi (itu E2-terrain / E2-markers).
+// E2-shell-fix: BasemapSwitcher TIDAK lagi di sini — ia berpindah
+// ke kad gabungan MapTopOverlay. MapView kini baca center/zoom/
+// activeTile dari MapContext, bukan prop.
+//
+// E2-core: peta + boleh condong/pusing + kawalan asas.
+// TIADA marker, TIADA terrain DEM lagi.
 //
 // Nota peralihan basemap:
 //   Tukar antara vektor ↔ raster bermakna objek `mapStyle` ditukar
-//   penuh. Peta akan "kelip" sekejap — tingkah laku biasa untuk
-//   pendekatan tukar-style-penuh. Boleh dioptimum kemudian.
+//   penuh. Peta "kelip" sekejap — tingkah laku biasa.
 // ----------------------------------------------------------------
 
-import { useState, useCallback, useMemo } from 'react';
+import { useMemo } from 'react';
 import Map from 'react-map-gl/maplibre';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
 import { buildMapStyle } from '../lib/mapStyle.js';
-import BasemapSwitcher from './BasemapSwitcher.jsx';
+import { useMapContext } from './MapContext.jsx';
 import MapControls from './MapControls.jsx';
 
-/**
- * @param {object}   props
- * @param {[number,number]} props.center        [lng, lat] awal
- * @param {number}   props.zoom                 zoom awal
- * @param {Array}    props.tiles                senarai tiles /api/tiles
- * @param {object}   props.initialTile          baris tile awal
- */
-export default function MapView({ center, zoom, tiles, initialTile }) {
-  // Tile aktif — mula dengan initialTile, tukar via BasemapSwitcher.
-  const [activeTile, setActiveTile] = useState(initialTile);
+export default function MapView() {
+  const { center, zoom, activeTile } = useMapContext();
 
-  // viewState awal sahaja — MapLibre uruskan selepas ini secara dalaman.
+  // viewState awal sahaja — MapLibre uruskan selepas ini.
   const initialViewState = useMemo(
     () => ({
       longitude: center[0],
@@ -45,15 +40,11 @@ export default function MapView({ center, zoom, tiles, initialTile }) {
   // Bina style dari tile aktif.
   const mapStyle = useMemo(() => buildMapStyle(activeTile), [activeTile]);
 
-  const handleTileChange = useCallback((tile) => {
-    setActiveTile(tile);
-  }, []);
-
-  // Kalau tiada tile langsung — tiada style untuk dirender.
+  // Tiada tile aktif lagi (context belum set) — tunggu.
   if (!mapStyle) {
     return (
       <div className="flex h-full w-full items-center justify-center bg-slate-100">
-        <p className="text-slate-500">Tiada sumber peta tersedia.</p>
+        <p className="text-slate-500">Menyediakan peta…</p>
       </div>
     );
   }
@@ -67,20 +58,12 @@ export default function MapView({ center, zoom, tiles, initialTile }) {
         maxPitch={75}
         dragRotate
         pitchWithRotate
-        // react-map-gl perlukan ini untuk MapLibre.
         attributionControl={{ compact: true }}
         style={{ width: '100%', height: '100%' }}
       >
         {/* Kawalan zoom / compass / pitch — sudut kanan bawah */}
         <MapControls />
       </Map>
-
-      {/* Penukar basemap — kad terapung kanan atas */}
-      <BasemapSwitcher
-        tiles={tiles}
-        activeTile={activeTile}
-        onChange={handleTileChange}
-      />
     </div>
   );
 }

@@ -1,17 +1,18 @@
 // src/pages/MapPage.jsx
 // ----------------------------------------------------------------
-// Halaman Peta (laluan "/") — E2-core.
-// Ambil data peta via useMapData, render MapView penuh skrin.
-// Kendali keadaan loading dan error dengan kemas.
+// Halaman Peta (laluan "/") — E2.
+//
+// E2-shell-fix: tidak lagi panggil useMapData. Data peta dimiliki
+// MapLayout (melalui MapProvider). MapPage cuma baca keadaan
+// loading/error dari context dan render MapView.
 // ----------------------------------------------------------------
 
-import { useMapData } from '../hooks/useMapData.js';
+import { useMapContext } from '../map/MapContext.jsx';
 import MapView from '../map/MapView.jsx';
 import { errMsg } from '../lib/api.js';
 
 export default function MapPage() {
-  const { isLoading, isError, error, center, zoom, tiles, initialTile } =
-    useMapData();
+  const { isLoading, isError, error } = useMapContext();
 
   // --- Loading ---------------------------------------------------
   if (isLoading) {
@@ -42,12 +43,7 @@ export default function MapPage() {
   // --- Peta ------------------------------------------------------
   return (
     <div className="h-full w-full">
-      <MapView
-        center={center}
-        zoom={zoom}
-        tiles={tiles}
-        initialTile={initialTile}
-      />
+      <MapView />
     </div>
   );
 }

@@ -6,7 +6,8 @@ import { queryClient } from './lib/queryClient.js';
 import { useAuthStore } from './store/authStore.js';
 
 import { RequireAuth, RequireSuperadmin, RedirectIfAuth } from './components/RouteGuards.jsx';
-import AppLayout from './components/layout/AppLayout.jsx';
+import MapLayout from './components/layout/MapLayout.jsx';            // E2-shell — layout peta
+import DashboardLayout from './components/layout/DashboardLayout.jsx'; // E2-shell — layout dashboard
 import LoginPage from './pages/LoginPage.jsx';
 import PlaceholderPage from './pages/PlaceholderPage.jsx';
 import MapPage from './pages/MapPage.jsx';   // E2 — halaman peta
@@ -32,17 +33,26 @@ export default function App() {
             }
           />
 
-          {/* Halaman dalam — perlu login */}
+          {/* --- Kumpulan PETA — guna MapLayout (peta penuh + overlay) --- */}
           <Route
             element={
               <RequireAuth>
-                <AppLayout />
+                <MapLayout />
               </RequireAuth>
             }
           >
-            {/* E2 — Peta MapLibre menggantikan placeholder */}
             <Route path="/" element={<MapPage />} />
             <Route path="/historical" element={<PlaceholderPage title="Sejarah" />} />
+          </Route>
+
+          {/* --- Kumpulan DASHBOARD — guna DashboardLayout (sidebar + kandungan) --- */}
+          <Route
+            element={
+              <RequireAuth>
+                <DashboardLayout />
+              </RequireAuth>
+            }
+          >
             <Route path="/settings" element={<PlaceholderPage title="Tetapan" />} />
             <Route
               path="/admin"

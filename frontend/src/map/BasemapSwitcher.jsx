@@ -1,11 +1,17 @@
 // src/map/BasemapSwitcher.jsx
 // ----------------------------------------------------------------
-// Kad terapung kanan-atas — tukar basemap aktif.
-// Ikon Lucide dipilih ikut nama tile (bukan lajur `icon` DB —
-// supaya tak bergantung pada nilai DB yang mungkin tak konsisten).
+// E2-shell-fix: butang ikon tunggal — klik buka senarai basemap.
+//
+// Bukan lagi tiga butang sentiasa nampak. Ikon = basemap aktif;
+// klik → dropdown tiga pilihan keluar ke bawah.
+//
+// Dimaksudkan untuk diletak DALAM kad gabungan MapTopOverlay,
+// bersebelahan menu profil. Data tile dibaca dari MapContext.
 // ----------------------------------------------------------------
 
-import { Map as MapIcon, Satellite, Mountain, Layers } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Map as MapIcon, Satellite, Mountain, Layers, Check } from 'lucide-react';
+import { useMapContext } from './MapContext.jsx';
 
 // Padan nama tile → ikon Lucide.
 const ICON_BY_NAME = {
@@ -14,41 +20,74 @@ const ICON_BY_NAME = {
   Terrain: Mountain,
 };
 
-/**
- * @param {object}   props
- * @param {Array}    props.tiles       senarai tiles /api/tiles
- * @param {object}   props.activeTile  tile aktif sekarang
- * @param {Function} props.onChange    (tile) => void
- */
-export default function BasemapSwitcher({ tiles, activeTile, onChange }) {
+export default function BasemapSwitcher() {
+  const { tiles, activeTile, setActiveTile } = useMapContext();
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  // Tutup dropdown bila klik di luar.
+  useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
   if (!Array.isArray(tiles) || tiles.length === 0) return null;
 
-  return (
-    <div className="absolute right-3 top-3 z-10">
-      <div className="flex flex-col gap-1 rounded-xl bg-white/95 p-1.5 shadow-lg ring-1 ring-slate-200 backdrop-blur">
-        {tiles.map((tile) => {
-          const Icon = ICON_BY_NAME[tile.name] || Layers;
-          const isActive = activeTile?.id === tile.id;
+  const ActiveIcon = ICON_BY_NAME[activeTile?.name] || Layers;
 
-          return (
-            <button
-              key={tile.id}
-              type="button"
-              onClick={() => onChange(tile)}
-              title={tile.name}
-              className={
-                'flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors ' +
-                (isActive
-                  ? 'bg-blue-600 text-white'
-                  : 'text-slate-700 hover:bg-slate-100')
-              }
-            >
-              <Icon size={16} strokeWidth={2} />
-              <span>{tile.name}</span>
-            </button>
-          );
-        })}
-      </div>
+  const handleSelect = (tile) => {
+    setActiveTile(tile);
+    setOpen(false);
+  };
+
+  return (
+    <div className="relative" ref={ref}>
+      {/* Butang ikon — tunjuk basemap aktif */}
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        title={`Basemap: ${activeTile?.name || '—'}`}
+        className="flex h-9 w-9 items-center justify-center rounded-lg
+                   text-slate-600 transition-colors hover:bg-slate-100"
+      >
+        <ActiveIcon size={18} strokeWidth={2} />
+      </button>
+
+      {/* Dropdown senarai basemap */}
+      {open && (
+        <div
+          className="absolute right-0 top-full mt-1.5 w-40 overflow-hidden
+                     rounded-xl bg-white shadow-xl ring-1 ring-slate-200"
+        >
+          {tiles.map((tile) => {
+            const Icon = ICON_BY_NAME[tile.name] || Layers;
+            const isActive = activeTile?.id === tile.id;
+            return (
+              <button
+                key={tile.id}
+                type="button"
+                onClick={() => handleSelect(tile)}
+                className={
+                  'flex w-full items-center gap-2.5 px-3 py-2.5 text-sm ' +
+                  'transition-colors ' +
+                  (isActive
+                    ? 'bg-blue-50 font-medium text-blue-700'
+                    : 'text-slate-700 hover:bg-slate-50')
+                }
+              >
+                <Icon size={16} strokeWidth={2} className="shrink-0" />
+                <span className="flex-1 text-left">{tile.name}</span>
+                {isActive && <Check size={14} className="text-blue-600" />}
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
