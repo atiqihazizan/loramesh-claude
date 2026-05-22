@@ -158,6 +158,7 @@ export async function processTracking(rawPayload, source, opts = {}) {
             sensor_data: liveRow.sensor_data,
             send_dt: liveRow.send_dt,
             node_dt: liveRow.node_dt,
+            received_at: liveRow.received_at,
           },
         });
 

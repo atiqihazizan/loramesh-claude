@@ -63,6 +63,13 @@ function normalizeStatusLive(v) {
   return null;
 }
 
+/** Telemetri bermakna — cukup untuk infer online bila status tiada. */
+function hasMeaningfulTrackingSignal({ send_dt, latitude, longitude }) {
+  if (send_dt != null) return true;
+  if (latitude != null && longitude != null) return true;
+  return false;
+}
+
 function normalizeSensorData(v) {
   if (v === null || v === undefined) return null;
   if (typeof v === 'object') return v; // array atau object — biarkan
@@ -102,7 +109,7 @@ export function normalizeTrackingData(raw, source = DATA_SOURCE.MQTT) {
   if (data_type) {
     deviceType = getDeviceTypeByCode(data_type); // null kalau tak wujud dalam DB
     if (!deviceType) {
-      errors.push(`data_type "${data_type}" tiada dalam device_type master`);
+      errors.push(`data_type "${data_type}" is not in device_type master`);
     }
   } else {
     errors.push('data_type missing');
@@ -119,12 +126,8 @@ export function normalizeTrackingData(raw, source = DATA_SOURCE.MQTT) {
   const heading = clampHeading(pickFirst(raw, ['heading', 'bearing', 'course']));
   const accuracy = toNumberOrNull(pickFirst(raw, ['accuracy', 'hdop']));
 
-  // --- status ---
+  // --- status (default/infer selepas send_dt — lihat bawah) ---
   let status_live = normalizeStatusLive(pickFirst(raw, ['status_live', 'status']));
-  if (!status_live) {
-    status_live = STATUS_LIVE_DEFAULT;
-    errors.push('status_live missing/invalid → defaulted offline');
-  }
 
   let motion_status = null;
   const rawMotion = pickFirst(raw, ['motion_status', 'motion']);
@@ -153,6 +156,16 @@ export function normalizeTrackingData(raw, source = DATA_SOURCE.MQTT) {
   const send_dt = parseTrackingDate(pickFirst(raw, ['send_dt', 'timestamp', 'ts']));
   const node_dt = parseTrackingDate(pickFirst(raw, ['node_dt']));
   const received_at = new Date();
+
+  if (!status_live) {
+    if (hasMeaningfulTrackingSignal({ send_dt, latitude, longitude })) {
+      status_live = STATUS_LIVE.ONLINE;
+      errors.push('status_live missing/invalid → inferred online (valid tracking data)');
+    } else {
+      status_live = STATUS_LIVE_DEFAULT;
+      errors.push('status_live missing/invalid → defaulted offline');
+    }
+  }
 
   return {
     device_id: String(device_id),
@@ -240,6 +253,7 @@ export function toLiveTrackingRow(n, agencyId) {
     sensor_data: n.sensor_data,
     send_dt: n.send_dt,
     node_dt: n.node_dt,
+    received_at: n.received_at,
   };
 }
 

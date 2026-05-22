@@ -68,6 +68,9 @@ export default function MapTopOverlay() {
           {/* Pemilih agency — render null jika bukan superadmin */}
           <AgencyPicker />
 
+          {/* Pemisah nipis */}
+          <div className="h-6 w-px bg-slate-200" />
+
           {/* Butang basemap — buka dropdown sendiri */}
           <BasemapSwitcher />
 

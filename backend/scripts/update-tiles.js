@@ -2,7 +2,7 @@
 // ----------------------------------------------------------------
 // Kemas kini jadual `tiles` supaya selari reka bentuk frontend baru:
 //   - Roadmap  → OpenFreeMap Liberty (style JSON vektor — 3D buildings)
-//   - Satelit  → Esri World Imagery  (raster XYZ — gambar udara)
+//   - Satellite → Esri World Imagery  (raster XYZ)
 //   - Terrain  → OpenFreeMap Liberty (style JSON vektor — relief 3D
 //                dihidupkan di frontend)
 //
@@ -39,7 +39,7 @@ const TARGET_TILES = [
     icon: 'map',
   },
   {
-    name: 'Satelit',
+    name: 'Satellite',
     theme: 'dark',
     // Raster XYZ Esri — PERHATIAN corak {z}/{y}/{x} (baris dahulu, lajur kemudian).
     url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
@@ -88,7 +88,11 @@ async function main() {
   // ---- Update / Create setiap tile sasaran --------------------
   for (const tile of TARGET_TILES) {
     // name bukan unik → cari manual.
-    const existing = await prisma.tiles.findFirst({ where: { name: tile.name } });
+    const existing =
+      (await prisma.tiles.findFirst({ where: { name: tile.name } })) ||
+      (tile.name === 'Satellite'
+        ? await prisma.tiles.findFirst({ where: { name: 'Satelit' } })
+        : null);
 
     if (existing) {
       if (DRY_RUN) {
@@ -98,7 +102,12 @@ async function main() {
       } else {
         await prisma.tiles.update({
           where: { id: existing.id },
-          data: { url: tile.url, theme: tile.theme, icon: tile.icon },
+          data: {
+            name: tile.name,
+            url: tile.url,
+            theme: tile.theme,
+            icon: tile.icon,
+          },
         });
         console.log(`[tiles] ✓ UPDATE        #${existing.id} ${tile.name}`);
       }
@@ -145,7 +154,7 @@ main()
     await prisma.$disconnect();
   })
   .catch(async (e) => {
-    console.error('[tiles] ❌ Gagal:', e);
+    console.error('[tiles] Failed:', e);
     await prisma.$disconnect();
     process.exit(1);
   });
