@@ -5,22 +5,12 @@
 // Disediakan oleh MapLayout (pemilik). Diguna oleh:
 //   - MapPage / MapView   → center, zoom, activeTile (bina style)
 //   - MapTopOverlay       → tiles + activeTile + setActiveTile
-//   - Map3DToggle         → is3D + setIs3D
-//   - MapCompass          → mapRef (baca bearing/pitch, reset utara)
 //
-// E2-ptz: tambah is3D (mod 3D on/off) + mapRef (rujukan objek
-// MapLibre, didaftar oleh MapView bila peta siap).
+// MapLayout panggil useMapData sekali, simpan activeTile di sini,
+// jadi MapView dan MapTopOverlay berkongsi satu sumber kebenaran.
 // ----------------------------------------------------------------
 
-import {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  useRef,
-  useCallback,
-  useMemo,
-} from 'react';
+import { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { useMapData } from '../hooks/useMapData.js';
 
 const MapContext = createContext(null);
@@ -34,16 +24,6 @@ export function MapProvider({ children }) {
 
   // State tile aktif — diangkat ke sini supaya dikongsi.
   const [activeTile, setActiveTile] = useState(null);
-
-  // E2-ptz — mod 3D on/off.
-  const [is3D, setIs3D] = useState(false);
-
-  // E2-ptz — rujukan objek peta MapLibre. Bukan state (tak perlu
-  // re-render bila ditetapkan); MapView daftar melalui setMapRef.
-  const mapRef = useRef(null);
-  const setMapRef = useCallback((map) => {
-    mapRef.current = map;
-  }, []);
 
   // Set tile awal sebaik useMapData siap (sekali sahaja).
   useEffect(() => {
@@ -62,12 +42,8 @@ export function MapProvider({ children }) {
       tiles,
       activeTile,
       setActiveTile,
-      is3D,
-      setIs3D,
-      mapRef,
-      setMapRef,
     }),
-    [isLoading, isError, error, center, zoom, tiles, activeTile, is3D, setMapRef],
+    [isLoading, isError, error, center, zoom, tiles, activeTile],
   );
 
   return <MapContext.Provider value={value}>{children}</MapContext.Provider>;

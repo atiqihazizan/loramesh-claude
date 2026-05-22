@@ -2,16 +2,14 @@
 // ----------------------------------------------------------------
 // Komponen peta MapLibre penuh skrin (react-map-gl/maplibre).
 //
-// E2-shell-fix: BasemapSwitcher TIDAK lagi di sini — ia berpindah
-// ke kad gabungan MapTopOverlay. MapView kini baca center/zoom/
-// activeTile dari MapContext, bukan prop.
+// Putar/condong/pan SENTIASA hidup — tiada mod:
+//   - pan      : seret kiri
+//   - putar    : seret kanan (atau dua jari di mobile)
+//   - condong  : seret kanan / dua jari
+//   - maxPitch : 85°
 //
-// E2-core: peta + boleh condong/pusing + kawalan asas.
+// Baca center/zoom/activeTile dari MapContext.
 // TIADA marker, TIADA terrain DEM lagi.
-//
-// Nota peralihan basemap:
-//   Tukar antara vektor ↔ raster bermakna objek `mapStyle` ditukar
-//   penuh. Peta "kelip" sekejap — tingkah laku biasa.
 // ----------------------------------------------------------------
 
 import { useMemo } from 'react';
@@ -40,7 +38,7 @@ export default function MapView() {
   // Bina style dari tile aktif.
   const mapStyle = useMemo(() => buildMapStyle(activeTile), [activeTile]);
 
-  // Tiada tile aktif lagi (context belum set) — tunggu.
+  // Tiada tile aktif lagi — tunggu.
   if (!mapStyle) {
     return (
       <div className="flex h-full w-full items-center justify-center bg-slate-100">
@@ -54,14 +52,15 @@ export default function MapView() {
       <Map
         initialViewState={initialViewState}
         mapStyle={mapStyle}
-        // Kawalan 3D — condong + pusing.
+        // Putar + condong sentiasa boleh.
         maxPitch={85}
         dragRotate
         pitchWithRotate
+        touchZoomRotate
         attributionControl={{ compact: true }}
         style={{ width: '100%', height: '100%' }}
       >
-        {/* Kawalan zoom / compass / pitch — sudut kanan bawah */}
+        {/* Kawalan zoom — sudut kanan bawah */}
         <MapControls />
       </Map>
     </div>
