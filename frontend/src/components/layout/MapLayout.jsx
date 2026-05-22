@@ -10,7 +10,7 @@
 //   kanan-atas   : kad [agency | basemap | profil]
 //   kanan-atas-2 : DeviceDetailPanel (panel detail device)
 //   kiri-tengah  : MapNavRail
-//   kanan-bawah  : zoom (MapControls)
+//   kanan-bawah  : zoom (MapControls) + FollowToggle (MapView, atas zoom)
 //   kiri-bawah   : bar skala
 
 import { Outlet } from 'react-router-dom';
@@ -25,7 +25,7 @@ export default function MapLayout() {
     <MapProvider>
       <div className="relative h-full w-full overflow-hidden">
         {/* Lapisan bawah — halaman peta, isi penuh skrin */}
-        <div className="absolute inset-0">
+        <div className="absolute inset-0 z-0">
           <Outlet />
         </div>
 

@@ -39,6 +39,10 @@ export function MapProvider({ children }) {
   // device_id of the device selected for the detail panel (or null).
   const [selectedDeviceId, setSelectedDeviceId] = useState(null);
 
+  // Follow camera on/off. When on AND a device is selected, the
+  // map follows that device's position on each socket update.
+  const [followMode, setFollowMode] = useState(false);
+
   // Set of device_type codes that are HIDDEN (type filter).
   const [hiddenTypeCodes, setHiddenTypeCodes] = useState(() => new Set());
 
@@ -65,10 +69,12 @@ export function MapProvider({ children }) {
     }
   }, [userAgencyId, selectedAgencyId]);
 
-  // Agency change → close detail panel + reset type filter.
+  // Agency change → close detail panel, reset type filter, and
+  // turn follow off (the followed device belongs to the old agency).
   useEffect(() => {
     setSelectedDeviceId(null);
     setHiddenTypeCodes(new Set());
+    setFollowMode(false);
   }, [selectedAgencyId]);
 
   // E2-markers-b: activate the realtime device socket. Pass
@@ -92,6 +98,8 @@ export function MapProvider({ children }) {
       setSelectedDeviceId,
       hiddenTypeCodes,
       toggleTypeCode,
+      followMode,
+      setFollowMode,
     }),
     [
       isLoading,
@@ -105,6 +113,7 @@ export function MapProvider({ children }) {
       selectedDeviceId,
       hiddenTypeCodes,
       toggleTypeCode,
+      followMode,
     ],
   );
 
