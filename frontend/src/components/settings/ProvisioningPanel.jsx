@@ -1,11 +1,13 @@
-// E5-b2 — provisioning panel: create + list enrollment nonces.
-// Reusable: used in Agency Settings (admin) and Agencies page (superadmin).
-// NOTE: shows nonce code as text + copy; no QR image library is installed.
+// E5-c2 — provisioning panel: one token per agency, with expiry.
+// Valid token → show QR + expiry + End button.
+// No/expired token → Generate button.
+// SUPERADMIN-only (used in Agencies page). agencyId is required.
 
-import { useState } from 'react';
-import { Plus, Trash2, Copy, Check } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import QRCode from 'qrcode';
+import { QrCode, Power, RefreshCw } from 'lucide-react';
 import { errMsg } from '../../lib/api.js';
-import { useProvisioning } from '../../hooks/useProvisioning.js';
+import { useAgencyToken } from '../../hooks/useAgencyToken.js';
 import ConfirmDialog from './ConfirmDialog.jsx';
 
 function fmtDate(value) {
@@ -18,181 +20,150 @@ function fmtDate(value) {
 
 /**
  * @param {object} props
- * @param {number|null} props.agencyId  target agency (superadmin) or null (own)
+ * @param {number} props.agencyId  required
  */
-export default function ProvisioningPanel({ agencyId = null }) {
+export default function ProvisioningPanel({ agencyId }) {
   const {
-    nonces,
+    status,
     isLoading,
     error,
-    createNonce,
-    revokeNonce,
-    isCreating,
-    isRevoking,
-    lastCreated,
-  } = useProvisioning(agencyId);
+    generate,
+    endToken,
+    isGenerating,
+    isEnding,
+  } = useAgencyToken(agencyId);
 
-  const [label, setLabel] = useState('');
-  const [createError, setCreateError] = useState(null);
-  const [confirmRevoke, setConfirmRevoke] = useState(null);
-  const [copied, setCopied] = useState(false);
+  const [qrUrl, setQrUrl] = useState(null);
+  const [actionError, setActionError] = useState(null);
+  const [confirmEnd, setConfirmEnd] = useState(false);
 
-  const handleCreate = async () => {
-    setCreateError(null);
-    try {
-      await createNonce({ label: label.trim() || null });
-      setLabel('');
-    } catch (err) {
-      setCreateError(err);
+  const token = status?.is_valid ? status.agency_token : null;
+
+  // Render the QR image whenever a valid token is present.
+  useEffect(() => {
+    let cancelled = false;
+    if (!token) {
+      return;
     }
-  };
-
-  const handleCopy = (text) => {
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(text).then(() => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 1500);
+    QRCode.toDataURL(token, { width: 220, margin: 1 })
+      .then((url) => {
+        if (!cancelled) setQrUrl(url);
+      })
+      .catch(() => {
+        if (!cancelled) setQrUrl(null);
       });
+    return () => {
+      cancelled = true;
+    };
+  }, [token]);
+
+  const handleGenerate = async () => {
+    setActionError(null);
+    try {
+      await generate();
+    } catch (err) {
+      setActionError(err);
     }
   };
 
-  const runRevoke = async () => {
-    if (!confirmRevoke) return;
+  const runEnd = async () => {
+    setActionError(null);
     try {
-      await revokeNonce(confirmRevoke.id);
-      setConfirmRevoke(null);
-    } catch {
-      /* keep dialog; error surfaced by hook state if needed */
+      await endToken();
+      setConfirmEnd(false);
+    } catch (err) {
+      setActionError(err);
+      setConfirmEnd(false);
     }
   };
+
+  if (isLoading) {
+    return <p className="text-sm text-slate-400">Loading…</p>;
+  }
+  if (error) {
+    return (
+      <p className="text-sm text-red-600">
+        {errMsg(error, 'Failed to load token status')}
+      </p>
+    );
+  }
 
   return (
     <div className="space-y-4">
-      {/* Create row */}
-      <div className="flex gap-2">
-        <input
-          type="text"
-          value={label}
-          onChange={(e) => setLabel(e.target.value)}
-          placeholder="Label (optional) — e.g. Ladang A enrollment"
-          className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm
-                     focus:outline-none focus:ring-2 focus:ring-brand-500"
-        />
-        <button
-          type="button"
-          onClick={handleCreate}
-          disabled={isCreating}
-          className="flex items-center gap-2 rounded-lg bg-brand-600 px-3 py-2
-                     text-sm font-medium text-white hover:bg-brand-700
-                     disabled:opacity-50"
-        >
-          <Plus size={16} />
-          {isCreating ? 'Generating…' : 'Generate code'}
-        </button>
-      </div>
-
-      {createError ? (
-        <p className="text-xs text-red-600">
-          {errMsg(createError, 'Failed to generate code')}
-        </p>
-      ) : null}
-
-      {/* Just-created nonce highlight */}
-      {lastCreated?.nonce ? (
-        <div className="rounded-lg border border-brand-200 bg-brand-50 p-3">
-          <p className="text-xs text-slate-500 mb-1">
-            New enrollment code — scan or enter in the app:
+      {status?.is_valid ? (
+        // ── Valid token: show QR + expiry + End ──
+        <div className="flex flex-col items-center gap-3">
+          {qrUrl ? (
+            <img
+              src={qrUrl}
+              alt="Provisioning QR"
+              className="rounded-lg border border-slate-200"
+            />
+          ) : (
+            <p className="text-sm text-slate-400">Rendering QR…</p>
+          )}
+          <p className="text-xs text-slate-500">
+            Valid until{' '}
+            <span className="font-medium text-slate-700">
+              {fmtDate(status.agency_token_expires_at)}
+            </span>
           </p>
-          <div className="flex items-center gap-2">
-            <code className="flex-1 rounded bg-white px-2 py-1.5 text-sm font-mono
-                             text-slate-800 break-all">
-              {lastCreated.nonce}
-            </code>
-            <button
-              type="button"
-              onClick={() => handleCopy(lastCreated.qr_string || lastCreated.nonce)}
-              className="flex items-center gap-1 rounded-lg border border-slate-200
-                         px-2 py-1.5 text-xs text-slate-600 hover:bg-slate-50"
-            >
-              {copied ? <Check size={14} /> : <Copy size={14} />}
-              {copied ? 'Copied' : 'Copy'}
-            </button>
-          </div>
+          <code className="rounded bg-slate-50 px-2 py-1 text-xs font-mono
+                           text-slate-600 break-all max-w-full">
+            {status.agency_token}
+          </code>
+          <button
+            type="button"
+            onClick={() => setConfirmEnd(true)}
+            className="flex items-center gap-2 rounded-lg border border-red-200
+                       px-3 py-2 text-sm font-medium text-red-600
+                       hover:bg-red-50"
+          >
+            <Power size={16} />
+            End token
+          </button>
         </div>
-      ) : null}
-
-      {/* Active codes list */}
-      {isLoading ? (
-        <p className="text-sm text-slate-400">Loading…</p>
-      ) : error ? (
-        <p className="text-sm text-red-600">
-          {errMsg(error, 'Failed to load codes')}
-        </p>
-      ) : nonces.length === 0 ? (
-        <p className="text-sm text-slate-400">No enrollment codes yet.</p>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-slate-200">
-          <table className="min-w-full divide-y divide-slate-200 text-sm">
-            <thead className="bg-slate-50">
-              <tr>
-                <th className="px-3 py-2 text-left text-xs font-medium uppercase text-slate-500">
-                  Code
-                </th>
-                <th className="px-3 py-2 text-left text-xs font-medium uppercase text-slate-500">
-                  Label
-                </th>
-                <th className="px-3 py-2 text-left text-xs font-medium uppercase text-slate-500">
-                  Claims
-                </th>
-                <th className="px-3 py-2 text-left text-xs font-medium uppercase text-slate-500">
-                  Expires
-                </th>
-                <th className="px-3 py-2" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {nonces.map((n) => (
-                <tr key={n.id} className="hover:bg-slate-50">
-                  <td className="px-3 py-2 font-mono text-slate-700">
-                    {n.nonce}
-                  </td>
-                  <td className="px-3 py-2 text-slate-600">{n.label || '—'}</td>
-                  <td className="px-3 py-2 text-slate-600">{n.claim_count}</td>
-                  <td className="px-3 py-2 text-slate-600">
-                    {n.is_expired ? (
-                      <span className="text-slate-400">Expired</span>
-                    ) : (
-                      fmtDate(n.expires_at)
-                    )}
-                  </td>
-                  <td className="px-3 py-2 text-right">
-                    {!n.is_expired ? (
-                      <button
-                        type="button"
-                        onClick={() => setConfirmRevoke(n)}
-                        className="rounded p-1.5 text-red-500 hover:bg-red-50"
-                        aria-label="Revoke"
-                      >
-                        <Trash2 size={15} />
-                      </button>
-                    ) : null}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        // ── No / expired token: Generate ──
+        <div className="flex flex-col items-center gap-3 py-4">
+          <div className="flex h-14 w-14 items-center justify-center
+                          rounded-full bg-slate-100">
+            <QrCode size={26} className="text-slate-400" />
+          </div>
+          <p className="text-sm text-slate-500 text-center">
+            {status?.agency_token_expires_at
+              ? 'The previous token has ended. Generate a new one to allow device enrollment.'
+              : 'No active token. Generate one to allow device enrollment.'}
+          </p>
+          <button
+            type="button"
+            onClick={handleGenerate}
+            disabled={isGenerating}
+            className="flex items-center gap-2 rounded-lg bg-brand-600 px-3 py-2
+                       text-sm font-medium text-white hover:bg-brand-700
+                       disabled:opacity-50"
+          >
+            <RefreshCw size={16} />
+            {isGenerating ? 'Generating…' : 'Generate token'}
+          </button>
         </div>
       )}
 
-      {confirmRevoke ? (
+      {actionError ? (
+        <p className="text-xs text-red-600 text-center">
+          {errMsg(actionError, 'Action failed')}
+        </p>
+      ) : null}
+
+      {confirmEnd ? (
         <ConfirmDialog
-          title="Revoke enrollment code"
-          message={`Revoke code "${confirmRevoke.nonce}"? Devices can no longer enroll with it.`}
-          confirmLabel="Revoke"
+          title="End provisioning token"
+          message="End the current token? Devices can no longer enroll until a new token is generated."
+          confirmLabel="End token"
           danger
-          isBusy={isRevoking}
-          onConfirm={runRevoke}
-          onCancel={() => setConfirmRevoke(null)}
+          isBusy={isEnding}
+          onConfirm={runEnd}
+          onCancel={() => setConfirmEnd(false)}
         />
       ) : null}
     </div>
