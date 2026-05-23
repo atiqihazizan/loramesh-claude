@@ -17,6 +17,11 @@ import {
   rotateAgencyToken,
   disableAgency,
 } from '../services/agency-service.js';
+import {
+  generateAgencyToken,
+  endAgencyToken,
+  getAgencyTokenStatus,
+} from '../services/provisioning-service.js';
 
 const router = express.Router();
 
@@ -99,6 +104,56 @@ router.delete(
       const result = await disableAgency(parseInt(req.params.id, 10));
       return res.json(result);
     } catch (err) {
+      return next(err);
+    }
+  }
+);
+
+// ── E5-c: provisioning token (SUPERADMIN) ──
+
+router.get(
+  '/:id/provision-token',
+  authenticateJwt,
+  requireSuperadmin,
+  validateId,
+  async (req, res, next) => {
+    try {
+      const result = await getAgencyTokenStatus(parseInt(req.params.id, 10));
+      return res.json(result);
+    } catch (err) {
+      if (err.status) return res.status(err.status).json({ error: err.message });
+      return next(err);
+    }
+  }
+);
+
+router.post(
+  '/:id/provision-token',
+  authenticateJwt,
+  requireSuperadmin,
+  validateId,
+  async (req, res, next) => {
+    try {
+      const result = await generateAgencyToken(parseInt(req.params.id, 10));
+      return res.status(201).json(result);
+    } catch (err) {
+      if (err.status) return res.status(err.status).json({ error: err.message });
+      return next(err);
+    }
+  }
+);
+
+router.delete(
+  '/:id/provision-token',
+  authenticateJwt,
+  requireSuperadmin,
+  validateId,
+  async (req, res, next) => {
+    try {
+      const result = await endAgencyToken(parseInt(req.params.id, 10));
+      return res.json(result);
+    } catch (err) {
+      if (err.status) return res.status(err.status).json({ error: err.message });
       return next(err);
     }
   }

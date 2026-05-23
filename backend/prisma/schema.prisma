@@ -27,6 +27,10 @@ model agency {
   database_url String? @db.VarChar(500)              // legacy compat - null in unified mode
   status       Boolean @default(true)
 
+  // E5-c: provisioning token expiry. Token = agency_token.
+  // null or past = token invalid, must regenerate.
+  agency_token_expires_at DateTime? @db.Timestamp(0)
+
   // v3: Map preferences per-agency
   default_map_center      String? @db.VarChar(100)   // "3.1390,101.6869"
   default_map_zoom        Int     @default(13)  @db.TinyInt
@@ -49,7 +53,6 @@ model agency {
   device_logs_old     device_log[]         @relation("DeviceLogOldAgency")
   device_logs_new     device_log[]         @relation("DeviceLogNewAgency")
   live_tracking       live_tracking[]
-  provisioning_nonces provisioning_nonce[]
 
   @@index([code],         map: "idx_agency_code")
   @@index([status],       map: "idx_agency_status")
@@ -358,32 +361,6 @@ model master_sensor {
   unit        String?
   created_at  DateTime @default(now()) @db.Timestamp(0)
   updated_at  DateTime @updatedAt      @db.Timestamp(0)
-}
-
-// ================================================================
-// PROVISIONING (Flutter APK enrollment via deep link)
-// ================================================================
-model provisioning_nonce {
-  id         Int       @id @default(autoincrement())
-  nonce      String    @unique @db.VarChar(100)
-  agency_id  Int
-  label      String?   @db.VarChar(100)   // v3: optional note e.g. "Ladang A enrollment"
-
-  // v3: claim tracking. DEMO MODE: claim_count incremented but max_claims NOT enforced.
-  //      For production: enforce claim_count < max_claims before allowing claim.
-  claim_count Int      @default(0)
-  max_claims  Int?     // null = unlimited (demo). Set a number for production limit.
-
-  used_at    DateTime?
-  expires_at DateTime  @db.Timestamp(0)
-  created_at DateTime  @default(now()) @db.Timestamp(0)
-  created_by Int?
-
-  agency agency @relation(fields: [agency_id], references: [id], onDelete: Cascade)
-
-  @@index([nonce],      map: "idx_nonce")
-  @@index([agency_id],  map: "idx_nonce_agency")
-  @@index([expires_at], map: "idx_nonce_expires")
 }
 
 // ================================================================
