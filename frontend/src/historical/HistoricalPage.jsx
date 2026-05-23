@@ -8,8 +8,9 @@ import { usePlayback } from './usePlayback.js';
 import RouteTab from './RouteTab.jsx';
 
 function HistoricalPageContent({ query }) {
-  const [tab, setTab] = useState(() => (query.isStatic ? 'sensor' : 'route'));
-  const playback = usePlayback(query);
+  const isStatic = query.isStatic === true;
+  const [tab, setTab] = useState('route');
+  const playback = usePlayback(isStatic ? null : query);
 
   const tabClass = (active) =>
     'flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ' +
@@ -29,29 +30,31 @@ function HistoricalPageContent({ query }) {
         </p>
       </div>
 
-      {/* Tabs */}
-      <div className="flex border-b border-slate-200 px-4 mt-2">
-        <button
-          type="button"
-          className={tabClass(tab === 'route')}
-          onClick={() => setTab('route')}
-        >
-          <Route size={16} />
-          Route
-        </button>
-        <button
-          type="button"
-          className={tabClass(tab === 'sensor')}
-          onClick={() => setTab('sensor')}
-        >
-          <Activity size={16} />
-          Sensor
-        </button>
-      </div>
+      {/* Tabs — Route (tracking) hidden for static devices */}
+      {!isStatic ? (
+        <div className="flex border-b border-slate-200 px-4 mt-2">
+          <button
+            type="button"
+            className={tabClass(tab === 'route')}
+            onClick={() => setTab('route')}
+          >
+            <Route size={16} />
+            Route
+          </button>
+          <button
+            type="button"
+            className={tabClass(tab === 'sensor')}
+            onClick={() => setTab('sensor')}
+          >
+            <Activity size={16} />
+            Sensor
+          </button>
+        </div>
+      ) : null}
 
       {/* Tab content */}
       <div className="flex-1 min-h-0">
-        {tab === 'route' ? (
+        {!isStatic && tab === 'route' ? (
           <RouteTab
             query={query}
             track={playback.track}
