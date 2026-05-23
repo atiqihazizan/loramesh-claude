@@ -15,9 +15,9 @@ import { useAgencyUsers } from '../../hooks/useAgencyUsers.js';
 import SuperadminAgencyPicker from '../../components/settings/SuperadminAgencyPicker.jsx';
 import SettingsPageHeader from '../../components/settings/SettingsPageHeader.jsx';
 import SettingsSection from '../../components/settings/SettingsSection.jsx';
+import DataTable from '../../components/settings/DataTable.jsx';
 import ConfirmDialog from '../../components/settings/ConfirmDialog.jsx';
 import UserFormModal from '../../components/settings/UserFormModal.jsx';
-import Spinner from '../../components/ui/Spinner.jsx';
 
 function statusLabel(status) {
   if (status === 'disabled') return 'Disabled';
@@ -111,6 +111,25 @@ export default function UsersPage() {
     }
   };
 
+  const columns = [
+    { key: 'name', label: 'Name', render: (row) => row.name || '—' },
+    { key: 'username', label: 'Username' },
+    { key: 'email', label: 'Email', render: (row) => row.email || '—' },
+    { key: 'role', label: 'Role', render: (row) => row.level?.name || '—' },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (row) => {
+        const disabled = row.status === 'disabled';
+        return (
+          <span className={disabled ? 'text-red-600' : 'text-slate-600'}>
+            {statusLabel(row.status)}
+          </span>
+        );
+      },
+    },
+  ];
+
   const runReset = async () => {
     if (!confirmReset) return;
     if (!resetPasswordValue || resetPasswordValue.length < 6) {
@@ -166,93 +185,52 @@ export default function UsersPage() {
               <p className="text-sm text-red-600 mb-3">{errMsg(actionError)}</p>
             ) : null}
 
-            {isLoading ? (
-              <div className="flex justify-center py-10">
-                <Spinner size={28} className="text-brand-600" />
-              </div>
-            ) : (
-              <div className="overflow-x-auto -mx-1">
-                <table className="w-full text-sm text-left min-w-[640px]">
-                  <thead>
-                    <tr className="border-b border-slate-200 text-slate-500">
-                      <th className="py-2 px-2 font-medium">Name</th>
-                      <th className="py-2 px-2 font-medium">Username</th>
-                      <th className="py-2 px-2 font-medium">Email</th>
-                      <th className="py-2 px-2 font-medium">Role</th>
-                      <th className="py-2 px-2 font-medium">Status</th>
-                      <th className="py-2 px-2 font-medium text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {users.length === 0 ? (
-                      <tr>
-                        <td colSpan={6} className="py-8 text-center text-slate-400">
-                          No other users in this agency
-                        </td>
-                      </tr>
-                    ) : (
-                      users.map((u) => {
-                        const disabled = u.status === 'disabled';
-                        return (
-                          <tr key={u.id} className="border-b border-slate-100">
-                            <td className="py-2.5 px-2 text-slate-800">{u.name || '—'}</td>
-                            <td className="py-2.5 px-2 text-slate-600">{u.username}</td>
-                            <td className="py-2.5 px-2 text-slate-600">{u.email || '—'}</td>
-                            <td className="py-2.5 px-2">{u.level?.name || '—'}</td>
-                            <td className="py-2.5 px-2">
-                              <span
-                                className={
-                                  disabled ? 'text-red-600' : 'text-slate-600'
-                                }
-                              >
-                                {statusLabel(u.status)}
-                              </span>
-                            </td>
-                            <td className="py-2.5 px-2">
-                              <div className="flex justify-end gap-1">
-                                <button
-                                  type="button"
-                                  title="Edit"
-                                  className="btn-ghost p-2"
-                                  onClick={() => openEdit(u)}
-                                >
-                                  <Pencil size={16} />
-                                </button>
-                                <button
-                                  type="button"
-                                  title="Reset password"
-                                  className="btn-ghost p-2"
-                                  disabled={disabled}
-                                  onClick={() => {
-                                    setActionError(null);
-                                    setResetPasswordValue('');
-                                    setConfirmReset(u);
-                                  }}
-                                >
-                                  <KeyRound size={16} />
-                                </button>
-                                <button
-                                  type="button"
-                                  title="Disable user"
-                                  className="btn-ghost p-2 text-red-600 hover:bg-red-50"
-                                  disabled={disabled}
-                                  onClick={() => {
-                                    setActionError(null);
-                                    setConfirmDisable(u);
-                                  }}
-                                >
-                                  <UserX size={16} />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            )}
+            <DataTable
+              columns={columns}
+              rows={users}
+              isLoading={isLoading}
+              emptyMessage="No other users in this agency"
+              renderActions={(u) => {
+                const disabled = u.status === 'disabled';
+                return (
+                  <>
+                    <button
+                      type="button"
+                      title="Edit"
+                      className="btn-ghost p-2"
+                      onClick={() => openEdit(u)}
+                    >
+                      <Pencil size={16} />
+                    </button>
+                    <button
+                      type="button"
+                      title="Reset password"
+                      className="btn-ghost p-2"
+                      disabled={disabled}
+                      onClick={() => {
+                        setActionError(null);
+                        setResetPasswordValue('');
+                        setConfirmReset(u);
+                      }}
+                    >
+                      <KeyRound size={16} />
+                    </button>
+                    <button
+                      type="button"
+                      title="Disable user"
+                      className="btn-ghost p-2 text-red-600 hover:bg-red-50"
+                      disabled={disabled}
+                      onClick={() => {
+                        setActionError(null);
+                        setConfirmDisable(u);
+                      }}
+                    >
+                      <UserX size={16} />
+                    </button>
+                  </>
+                );
+              }}
+            />
 
             {modal ? (
               <UserFormModal
