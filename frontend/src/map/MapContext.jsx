@@ -55,6 +55,15 @@ export function MapProvider({ children }) {
     });
   }, []);
 
+  // E6-typefilter: flyTo target — { lng, lat, zoom, nonce }.
+  // TypeFilter (overlay luar <Map>) panggil flyTo(); FlyToController
+  // dalam <Map> dengar nonce dan laksanakan map.flyTo().
+  const [flyToTarget, setFlyToTarget] = useState(null);
+
+  const flyTo = useCallback((lng, lat, zoom = 15) => {
+    setFlyToTarget({ lng, lat, zoom, nonce: Date.now() });
+  }, []);
+
   // Set the initial tile once useMapData is ready.
   useEffect(() => {
     if (initialTile && !activeTile) {
@@ -100,6 +109,8 @@ export function MapProvider({ children }) {
       toggleTypeCode,
       followMode,
       setFollowMode,
+      flyTo,
+      flyToTarget,
     }),
     [
       isLoading,
@@ -114,6 +125,8 @@ export function MapProvider({ children }) {
       hiddenTypeCodes,
       toggleTypeCode,
       followMode,
+      flyTo,
+      flyToTarget,
     ],
   );
 

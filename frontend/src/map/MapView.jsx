@@ -89,6 +89,29 @@ function FollowCamera() {
   return null;
 }
 
+// Internal — terbangkan peta ke sasaran bila TypeFilter minta.
+// Hidup dalam <Map> untuk useMap(). Tidak render apa-apa.
+function FlyToController() {
+  const { current: mapInstance } = useMap();
+  const { flyToTarget } = useMapContext();
+  const lastNonce = useRef(null);
+
+  useEffect(() => {
+    if (!mapInstance || !flyToTarget) return;
+    // Nonce sama → permintaan sama, abaikan.
+    if (flyToTarget.nonce === lastNonce.current) return;
+    lastNonce.current = flyToTarget.nonce;
+
+    mapInstance.flyTo({
+      center: [flyToTarget.lng, flyToTarget.lat],
+      zoom: flyToTarget.zoom,
+      duration: 1000,
+    });
+  }, [mapInstance, flyToTarget]);
+
+  return null;
+}
+
 export default function MapView() {
   const { center, zoom, activeTile } = useMapContext();
 
@@ -131,6 +154,9 @@ export default function MapView() {
 
         {/* Follow camera — eases to selected device */}
         <FollowCamera />
+
+        {/* Fly-to — TypeFilter node tap */}
+        <FlyToController />
 
         {/* Zoom controls — bottom right */}
         <MapControls />
