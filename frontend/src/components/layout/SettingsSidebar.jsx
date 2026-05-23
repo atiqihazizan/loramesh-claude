@@ -4,8 +4,10 @@ import { NavLink } from 'react-router-dom';
 import {
   ArrowLeft,
   Building2,
+  Cpu,
   History,
   Map,
+  MapPinned,
   UserCircle,
   Users,
 } from 'lucide-react';
@@ -56,6 +58,14 @@ export default function SettingsSidebar() {
           <NavLink to="/settings/agency" className={settingsLinkClass}>
             <Building2 size={18} className="shrink-0" />
             <span className="text-sm font-medium">Agency Settings</span>
+          </NavLink>
+          <NavLink to="/settings/devices" className={settingsLinkClass}>
+            <Cpu size={18} className="shrink-0" />
+            <span className="text-sm font-medium">Devices</span>
+          </NavLink>
+          <NavLink to="/settings/sites" className={settingsLinkClass}>
+            <MapPinned size={18} className="shrink-0" />
+            <span className="text-sm font-medium">Sites</span>
           </NavLink>
           <NavLink to="/settings/users" className={settingsLinkClass}>
             <Users size={18} className="shrink-0" />

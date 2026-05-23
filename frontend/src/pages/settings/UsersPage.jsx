@@ -13,7 +13,9 @@ import { useAuthStore } from '../../store/authStore.js';
 import { useAgencies } from '../../hooks/useAgencies.js';
 import { useAgencyUsers } from '../../hooks/useAgencyUsers.js';
 import SuperadminAgencyPicker from '../../components/settings/SuperadminAgencyPicker.jsx';
+import SettingsPageHeader from '../../components/settings/SettingsPageHeader.jsx';
 import SettingsSection from '../../components/settings/SettingsSection.jsx';
+import ConfirmDialog from '../../components/settings/ConfirmDialog.jsx';
 import UserFormModal from '../../components/settings/UserFormModal.jsx';
 import Spinner from '../../components/ui/Spinner.jsx';
 
@@ -23,40 +25,6 @@ function statusLabel(status) {
   if (status === 'offline') return 'Offline';
   if (status === 'banned') return 'Banned';
   return status || '—';
-}
-
-function ConfirmDialog({
-  title,
-  message,
-  confirmLabel,
-  danger,
-  onCancel,
-  onConfirm,
-  busy,
-  children,
-}) {
-  return (
-    <div className="fixed inset-0 z-[210] flex items-center justify-center bg-black/40 p-4">
-      <div className="card w-full max-w-sm p-5 shadow-xl">
-        <h3 className="text-base font-semibold text-slate-800">{title}</h3>
-        <p className="mt-2 text-sm text-slate-600">{message}</p>
-        {children}
-        <div className="mt-5 flex justify-end gap-2">
-          <button type="button" className="btn-secondary" onClick={onCancel} disabled={busy}>
-            Cancel
-          </button>
-          <button
-            type="button"
-            className={danger ? 'btn-danger' : 'btn-primary'}
-            onClick={onConfirm}
-            disabled={busy}
-          >
-            {busy ? <Spinner size={18} className="text-white" /> : confirmLabel}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
 }
 
 export default function UsersPage() {
@@ -165,12 +133,10 @@ export default function UsersPage() {
   return (
     <div className="h-full overflow-y-auto">
       <div className="max-w-4xl mx-auto px-4 py-6 sm:py-8 space-y-6">
-        <header>
-          <h1 className="text-xl font-semibold text-slate-900">Users</h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Manage accounts in your agency. Your own account is under My Account.
-          </p>
-        </header>
+        <SettingsPageHeader
+          title="Users"
+          subtitle="Manage accounts in your agency. Your own account is under My Account."
+        />
 
         {isSuperadmin ? (
           <SuperadminAgencyPicker

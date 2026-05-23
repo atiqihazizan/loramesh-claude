@@ -53,4 +53,52 @@
   .card {
     @apply bg-white rounded-xl shadow-card border border-slate-100;
   }
+
+  .login-field {
+    @apply rounded-xl border-slate-200/90 bg-white py-2.5 shadow-sm
+           placeholder:text-slate-400
+           focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10;
+  }
+  .login-submit {
+    @apply rounded-xl shadow-md shadow-brand-600/20 transition-all duration-200
+           hover:shadow-lg hover:shadow-brand-600/25 hover:-translate-y-px
+           active:translate-y-0 disabled:hover:translate-y-0;
+  }
+}
+
+@keyframes login-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.login-enter {
+  animation: login-fade-up 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Mobile — header warna hutan (ganti imej), tiada background halaman */
+.login-mobile-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.5rem 1.75rem;
+  text-align: center;
+  background: linear-gradient(145deg, #043d35 0%, #065f46 48%, #047857 100%);
+}
+
+@media (min-width: 1024px) {
+  .login-form-panel {
+    overflow: visible;
+    border-radius: 1rem;
+    border: 1px solid rgb(241 245 249 / 0.8);
+    background: rgb(255 255 255 / 0.9);
+    box-shadow: 0 12px 40px rgba(37, 99, 235, 0.08);
+    backdrop-filter: blur(4px);
+  }
 }

@@ -3,8 +3,9 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Radio, ChevronDown, LogOut, User } from 'lucide-react';
+import { ChevronDown, LogOut, User } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore.js';
+import AppLogo from '../ui/AppLogo.jsx';
 
 export default function TopBar() {
   const navigate = useNavigate();
@@ -33,10 +34,8 @@ export default function TopBar() {
                        justify-between px-4 z-30">
       {/* Kiri — logo + nama */}
       <div className="flex items-center gap-2.5">
-        <div className="h-8 w-8 rounded-lg bg-brand-600 flex items-center justify-center">
-          <Radio size={18} className="text-white" />
-        </div>
-        <span className="font-semibold text-slate-800">LoRa Mesh</span>
+        <AppLogo className="h-8 w-auto max-h-8 object-contain" />
+        <span className="font-semibold text-slate-800 hidden sm:inline">LoRa Mesh</span>
       </div>
 
       {/* Kanan — agency + profil */}

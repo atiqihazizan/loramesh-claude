@@ -15,6 +15,8 @@ import MapPage from './pages/MapPage.jsx';   // E2 — halaman peta
 import SettingsIndexRedirect from './pages/settings/SettingsIndexRedirect.jsx';
 import AgencySettingsPage from './pages/settings/AgencySettingsPage.jsx';
 import UsersPage from './pages/settings/UsersPage.jsx';
+import DevicesPage from './pages/settings/DevicesPage.jsx';
+import SitesPage from './pages/settings/SitesPage.jsx';
 import MyAccountPage from './pages/settings/MyAccountPage.jsx';
 
 export default function App() {
@@ -60,6 +62,8 @@ export default function App() {
           >
             <Route path="/settings" element={<SettingsIndexRedirect />} />
             <Route path="/settings/agency" element={<AgencySettingsPage />} />
+            <Route path="/settings/devices" element={<DevicesPage />} />
+            <Route path="/settings/sites" element={<SitesPage />} />
             <Route path="/settings/users" element={<UsersPage />} />
             <Route path="/settings/account" element={<MyAccountPage />} />
           </Route>

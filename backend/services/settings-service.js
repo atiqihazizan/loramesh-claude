@@ -394,11 +394,14 @@ export async function getMyPreferences(userId) {
   };
 }
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 /**
- * Update own UI preferences.
+ * Update own profile and UI preferences (PATCH /settings/me).
  */
 export async function updateMyPreferences(userId, patch) {
   const allowed = {};
+
   if (patch.theme_preference !== undefined) {
     const valid = ['light', 'dark', 'auto'];
     if (!valid.includes(patch.theme_preference)) {
@@ -407,6 +410,41 @@ export async function updateMyPreferences(userId, patch) {
       throw err;
     }
     allowed.theme_preference = patch.theme_preference;
+  }
+
+  if (patch.name !== undefined) {
+    const name = String(patch.name).trim();
+    if (name.length < 1 || name.length > 200) {
+      const err = new Error('name must be between 1 and 200 characters');
+      err.status = 400;
+      throw err;
+    }
+    allowed.name = name;
+  }
+
+  if (patch.email !== undefined) {
+    const email = patch.email === null || patch.email === '' ? null : String(patch.email).trim();
+    if (email !== null) {
+      if (email.length > 255 || !EMAIL_RE.test(email)) {
+        const err = new Error('email must be a valid address (max 255 characters)');
+        err.status = 400;
+        throw err;
+      }
+    }
+    allowed.email = email;
+  }
+
+  if (patch.phone_number !== undefined) {
+    const phone =
+      patch.phone_number === null || patch.phone_number === ''
+        ? null
+        : String(patch.phone_number).trim();
+    if (phone !== null && (phone.length < 1 || phone.length > 30)) {
+      const err = new Error('phone_number must be between 1 and 30 characters');
+      err.status = 400;
+      throw err;
+    }
+    allowed.phone_number = phone;
   }
 
   if (Object.keys(allowed).length === 0) {
@@ -418,7 +456,12 @@ export async function updateMyPreferences(userId, patch) {
   const updated = await prisma.users.update({
     where: { id: userId },
     data: allowed,
-    select: { theme_preference: true },
+    select: {
+      name: true,
+      email: true,
+      phone_number: true,
+      theme_preference: true,
+    },
   });
   return updated;
 }

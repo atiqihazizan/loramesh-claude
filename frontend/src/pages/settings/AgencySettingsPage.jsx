@@ -7,6 +7,7 @@ import { useAuthStore } from '../../store/authStore.js';
 import { useAgencies } from '../../hooks/useAgencies.js';
 import { useAgencySettings } from '../../hooks/useAgencySettings.js';
 import SuperadminAgencyPicker from '../../components/settings/SuperadminAgencyPicker.jsx';
+import SettingsPageHeader from '../../components/settings/SettingsPageHeader.jsx';
 import AgencySettingsForm from '../../components/settings/AgencySettingsForm.jsx';
 
 export default function AgencySettingsPage() {
@@ -29,12 +30,10 @@ export default function AgencySettingsPage() {
   return (
     <div className="h-full overflow-y-auto">
       <div className="max-w-3xl mx-auto px-4 py-6 sm:py-8 space-y-6">
-        <header>
-          <h1 className="text-xl font-semibold text-slate-900">Agency settings</h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Default map, follow-camera tracking, and session timeout for your agency.
-          </p>
-        </header>
+        <SettingsPageHeader
+          title="Agency settings"
+          subtitle="Default map, follow-camera tracking, and session timeout for your agency."
+        />
 
         {isSuperadmin ? (
           <SuperadminAgencyPicker

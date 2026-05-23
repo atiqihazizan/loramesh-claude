@@ -56,19 +56,24 @@ export default function AgencyPicker() {
 
   return (
     <div className="relative" ref={ref}>
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        title="Change agency"
-        className="flex items-center gap-2 rounded-lg px-2.5 py-1.5
-                   text-sm transition-colors hover:bg-slate-100"
-      >
-        <Building2 size={16} className="shrink-0 text-slate-500" />
-        <span className="max-w-[140px] truncate font-medium text-slate-700">
-          {label}
-        </span>
-        <ChevronDown size={15} className="shrink-0 text-slate-400" />
-      </button>
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          title="Change agency"
+          className="flex items-center gap-2 rounded-lg px-2.5 py-1.5
+                    text-sm transition-colors hover:bg-slate-100"
+        >
+          <Building2 size={16} className="shrink-0 text-slate-500" />
+          <span className="max-w-[140px] truncate font-medium text-slate-700">
+            {label}
+          </span>
+          <ChevronDown size={15} className="shrink-0 text-slate-400" />
+        </button>
+
+        {/* Pemisah nipis */}
+        <div className="h-6 w-px bg-slate-200" />
+      </div>
 
       {open && agencies.length > 0 && (
         <div

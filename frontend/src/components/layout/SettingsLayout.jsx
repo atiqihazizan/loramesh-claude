@@ -8,7 +8,12 @@ import { useAuthStore } from '../../store/authStore.js';
 function SettingsRoleGuard() {
   const location = useLocation();
   const isAgencyAdmin = useAuthStore((s) => s.isAgencyAdmin());
-  const adminPaths = ['/settings/agency', '/settings/users'];
+  const adminPaths = [
+    '/settings/agency',
+    '/settings/devices',
+    '/settings/sites',
+    '/settings/users',
+  ];
 
   if (!isAgencyAdmin && adminPaths.some((p) => location.pathname.startsWith(p))) {
     return <Navigate to="/settings/account" replace />;
