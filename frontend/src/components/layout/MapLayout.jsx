@@ -5,17 +5,15 @@
 // MapLayout PEMILIK data peta — bungkus <MapProvider>.
 //
 // Susun atur terapung:
-//   kiri-atas    : logo + nama
+//   kiri-atas    : logo + nama (+ agency)
 //   kiri-atas-2  : TypeFilter (penapis jenis peranti)
-//   kanan-atas   : kad [agency | basemap | profil]
+//   kanan-atas   : kad [agency | basemap | profil] — nav dalam dropdown profil
 //   kanan-atas-2 : DeviceDetailPanel (panel detail device)
-//   kiri-tengah  : MapNavRail
 //   kanan-bawah  : zoom (MapControls) + FollowToggle (MapView, atas zoom)
 //   kiri-bawah   : bar skala
 
 import { Outlet } from 'react-router-dom';
 import { MapProvider } from '../../map/MapContext.jsx';
-import MapNavRail from '../../map/MapNavRail.jsx';
 import MapTopOverlay from '../../map/MapTopOverlay.jsx';
 import TypeFilter from '../../map/TypeFilter.jsx';
 import DeviceDetailPanel from '../../map/DeviceDetailPanel.jsx';
@@ -30,7 +28,6 @@ export default function MapLayout() {
         </div>
 
         {/* Overlay — navigasi terapung di atas peta */}
-        <MapNavRail />
         <MapTopOverlay />
 
         {/* Overlay — penapis jenis peranti (kiri) */}

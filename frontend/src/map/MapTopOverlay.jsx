@@ -2,22 +2,28 @@
 // ----------------------------------------------------------------
 // Overlay atas peta — versi terapung TopBar E1.
 //
-// E2-shell-fix: kepingan kanan kini KAD GABUNGAN —
-//   [ butang basemap ] | [ menu profil ]
-// dalam satu kad putih. Tiada lagi tindihan dengan BasemapSwitcher
-// (yang dulu kad berasingan kanan-atas).
+// E3-nav: navigasi peta (Map/History/Settings/Admin) dipindah ke
+// DALAM dropdown menu profil — satu klik buka menu, klik kedua
+// navigate. MapNavRail terapung kiri-tengah dibuang.
 //
 // Susun atur terapung peta:
-//   kiri-atas   : logo + nama
-//   kanan-atas  : kad [basemap | profil]
-//   kiri-tengah : MapNavRail
+//   kiri-atas   : logo + nama (+ agency untuk bukan-superadmin)
+//   kanan-atas  : kad [agency | basemap | profil]
 //   kanan-bawah : kawalan zoom (+ PTZ nanti)
 //   kiri-bawah  : bar skala
 // ----------------------------------------------------------------
 
 import { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ChevronDown, LogOut, User } from 'lucide-react';
+import { useNavigate, NavLink } from 'react-router-dom';
+import {
+  ChevronDown,
+  LogOut,
+  User,
+  Map,
+  History,
+  Settings,
+  Shield,
+} from 'lucide-react';
 import { useAuthStore } from '../store/authStore.js';
 import AppLogo from '../components/ui/AppLogo.jsx';
 import AgencyPicker from './AgencyPicker.jsx';
@@ -28,6 +34,12 @@ function agencyDisplayLabel(agency) {
   if (agency.code) return `${agency.name} (${agency.code})`;
   return agency.name;
 }
+
+const navItems = [
+  { to: '/', icon: Map, label: 'Map', end: true },
+  { to: '/historical', icon: History, label: 'History' },
+  { to: '/settings', icon: Settings, label: 'Settings' },
+];
 
 export default function MapTopOverlay() {
   const navigate = useNavigate();
@@ -51,6 +63,12 @@ export default function MapTopOverlay() {
     await logout();
     navigate('/login');
   };
+
+  // Senarai navigasi — tambah Admin untuk superadmin.
+  const items = [...navItems];
+  if (isSuperadmin) {
+    items.push({ to: '/admin', icon: Shield, label: 'Admin' });
+  }
 
   return (
     <>
@@ -94,7 +112,7 @@ export default function MapTopOverlay() {
           {/* Pemisah nipis */}
           <div className="h-6 w-px bg-slate-200" />
 
-          {/* Menu profil */}
+          {/* Menu profil — navigasi + agency + log out */}
           <div className="relative" ref={menuRef}>
             <button
               onClick={() => setMenuOpen((v) => !v)}
@@ -114,7 +132,7 @@ export default function MapTopOverlay() {
             {/* Dropdown profil */}
             {menuOpen && (
               <div
-                className="absolute right-0 top-full mt-1.5 w-44
+                className="absolute right-0 top-full mt-1.5 w-48
                            overflow-hidden rounded-xl bg-white shadow-xl
                            ring-1 ring-slate-200"
               >
@@ -127,6 +145,30 @@ export default function MapTopOverlay() {
                     </p>
                   </div>
                 )}
+
+                {/* E3-nav — navigasi peta dalam dropdown profil */}
+                <div className="border-b border-slate-100 py-1">
+                  {items.map(({ to, icon: Icon, label, end }) => (
+                    <NavLink
+                      key={to}
+                      to={to}
+                      end={end}
+                      onClick={() => setMenuOpen(false)}
+                      className={({ isActive }) =>
+                        'flex w-full items-center gap-2.5 px-4 py-2.5 ' +
+                        'text-sm transition-colors ' +
+                        (isActive
+                          ? 'bg-blue-50 font-medium text-blue-700'
+                          : 'text-slate-700 hover:bg-slate-50')
+                      }
+                    >
+                      <Icon size={15} className="shrink-0" />
+                      {label}
+                    </NavLink>
+                  ))}
+                </div>
+
+                {/* Log out */}
                 <button
                   onClick={handleLogout}
                   className="flex w-full items-center gap-2.5 px-4 py-2.5
