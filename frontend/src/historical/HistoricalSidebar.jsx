@@ -1,19 +1,26 @@
-// E4-b — historical sidebar: query form (agency → date range → device → View)
+// E4-b — historical sidebar: query form (agency → device → date range → View)
+// E4-b2 — date range chosen via RangeCalendar, constrained by playback bounds.
 
 import { useState, useMemo } from 'react';
 import { History, Search } from 'lucide-react';
 import { useAuthStore } from '../store/authStore.js';
 import { useAgencies } from '../hooks/useAgencies.js';
 import { useHistoricalDevices } from './useHistoricalDevices.js';
+import { usePlaybackBounds } from './usePlaybackBounds.js';
 import { useHistoricalContext } from './HistoricalContext.jsx';
+import RangeCalendar from './RangeCalendar.jsx';
 
-// Convert <input type="date"> value (YYYY-MM-DD) into a full
-// MySQL-friendly timestamp the backend's parseTrackingDate accepts.
-function toStartOfDay(d) {
-  return d ? `${d} 00:00:00` : null;
+// Format a Date → "YYYY-MM-DD" (local, no timezone shift).
+function ymd(d) {
+  const p = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
 }
-function toEndOfDay(d) {
-  return d ? `${d} 23:59:59` : null;
+// Parse "YYYY-MM-DD..." (from API bounds) → Date at local midnight.
+function parseYmd(s) {
+  if (!s) return null;
+  const m = String(s).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) return null;
+  return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
 }
 
 export default function HistoricalSidebar() {
@@ -22,18 +29,20 @@ export default function HistoricalSidebar() {
   const { setQuery } = useHistoricalContext();
 
   const [agencyId, setAgencyId] = useState(null);
-  const [fromDate, setFromDate] = useState('');
-  const [toDate, setToDate] = useState('');
   const [deviceId, setDeviceId] = useState('');
+  const [range, setRange] = useState(undefined); // { from, to } from RangeCalendar
   const [formError, setFormError] = useState(null);
 
   const { devices, isLoading: devicesLoading } = useHistoricalDevices(agencyId);
+  const { bounds, isLoading: boundsLoading } = usePlaybackBounds(deviceId);
 
-  // Device chosen — used to carry is_static into the query.
   const selectedDevice = useMemo(
     () => devices.find((d) => d.device_id === deviceId) || null,
     [devices, deviceId]
   );
+
+  const minDate = useMemo(() => parseYmd(bounds?.earliest), [bounds]);
+  const maxDate = useMemo(() => parseYmd(bounds?.latest), [bounds]);
 
   const handleView = () => {
     setFormError(null);
@@ -41,24 +50,23 @@ export default function HistoricalSidebar() {
       setFormError('Select an agency first.');
       return;
     }
-    if (!fromDate || !toDate) {
-      setFormError('Select both From and To dates.');
-      return;
-    }
-    if (fromDate > toDate) {
-      setFormError('From date must be on or before To date.');
-      return;
-    }
     if (!deviceId) {
       setFormError('Select a device.');
       return;
     }
+    if (!range?.from) {
+      setFormError('Pick a date (or a date range) on the calendar.');
+      return;
+    }
+    // Pick 1 date → single day: from === to.
+    const fromDay = range.from;
+    const toDay = range.to || range.from;
     setQuery({
       deviceId,
       deviceName: selectedDevice?.name || deviceId,
       isStatic: selectedDevice?.is_static === true,
-      from: toStartOfDay(fromDate),
-      to: toEndOfDay(toDate),
+      from: `${ymd(fromDay)} 00:00:00`,
+      to: `${ymd(toDay)} 23:59:59`,
     });
   };
 
@@ -85,6 +93,7 @@ export default function HistoricalSidebar() {
                 const v = e.target.value;
                 setAgencyId(v === '' ? null : Number(v));
                 setDeviceId('');
+                setRange(undefined);
               }}
               className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm
                          focus:outline-none focus:ring-2 focus:ring-brand-500"
@@ -101,34 +110,6 @@ export default function HistoricalSidebar() {
           </div>
         ) : null}
 
-        {/* From date */}
-        <div>
-          <label className="block text-xs font-medium text-slate-500 mb-1">
-            From
-          </label>
-          <input
-            type="date"
-            value={fromDate}
-            onChange={(e) => setFromDate(e.target.value)}
-            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm
-                       focus:outline-none focus:ring-2 focus:ring-brand-500"
-          />
-        </div>
-
-        {/* To date */}
-        <div>
-          <label className="block text-xs font-medium text-slate-500 mb-1">
-            To
-          </label>
-          <input
-            type="date"
-            value={toDate}
-            onChange={(e) => setToDate(e.target.value)}
-            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm
-                       focus:outline-none focus:ring-2 focus:ring-brand-500"
-          />
-        </div>
-
         {/* Device */}
         <div>
           <label className="block text-xs font-medium text-slate-500 mb-1">
@@ -136,7 +117,10 @@ export default function HistoricalSidebar() {
           </label>
           <select
             value={deviceId}
-            onChange={(e) => setDeviceId(e.target.value)}
+            onChange={(e) => {
+              setDeviceId(e.target.value);
+              setRange(undefined);
+            }}
             disabled={isSuperadmin && agencyId == null}
             className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm
                        focus:outline-none focus:ring-2 focus:ring-brand-500
@@ -151,6 +135,28 @@ export default function HistoricalSidebar() {
               </option>
             ))}
           </select>
+        </div>
+
+        {/* Date range calendar */}
+        <div>
+          <label className="block text-xs font-medium text-slate-500 mb-1">
+            Date range
+          </label>
+          <RangeCalendar
+            range={range}
+            onChange={setRange}
+            minDate={minDate}
+            maxDate={maxDate}
+            disabled={!deviceId}
+          />
+          {deviceId && boundsLoading ? (
+            <p className="text-xs text-slate-400 mt-1">Loading available dates…</p>
+          ) : null}
+          {deviceId && !boundsLoading && bounds && bounds.total_points === 0 ? (
+            <p className="text-xs text-slate-400 mt-1">
+              No historical data for this device.
+            </p>
+          ) : null}
         </div>
 
         {/* Error */}
