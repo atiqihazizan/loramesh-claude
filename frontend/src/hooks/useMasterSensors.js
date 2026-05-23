@@ -1,5 +1,4 @@
-// E5-a — master sensor CRUD (superadmin).
-// GET /sensors · POST/PATCH/DELETE /sensors/:id
+// E5-a — master sensor CRUD (GET/POST /sensors, PATCH/DELETE /sensors/:id)
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/api.js';
@@ -11,12 +10,15 @@ async function fetchSensors() {
 
 export function useMasterSensors() {
   const queryClient = useQueryClient();
-  const queryKey = ['master-sensors'];
 
-  const query = useQuery({ queryKey, queryFn: fetchSensors, staleTime: 30_000 });
+  const query = useQuery({
+    queryKey: ['master-sensors'],
+    queryFn: fetchSensors,
+    staleTime: 60_000,
+  });
 
   const invalidate = () => {
-    queryClient.invalidateQueries({ queryKey });
+    queryClient.invalidateQueries({ queryKey: ['master-sensors'] });
   };
 
   const createSensor = useMutation({

@@ -1,16 +1,16 @@
 // E3-a — settings sidebar: app exit links + settings sub-nav (role-gated)
-// E5-a — added superadmin master-data links (Device Types, Sensors)
+// E5-a — added superadmin master-data links (Sensors, Device Types)
 
 import { NavLink } from 'react-router-dom';
 import {
   ArrowLeft,
   Building2,
   Cpu,
+  Gauge,
   History,
   Map,
   MapPinned,
-  Activity,
-  Boxes,
+  Shapes,
   UserCircle,
   Users,
 } from 'lucide-react';
@@ -88,13 +88,13 @@ export default function SettingsSidebar() {
           <p className="px-4 mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
             Master data
           </p>
-          <NavLink to="/settings/device-types" className={settingsLinkClass}>
-            <Boxes size={18} className="shrink-0" />
-            <span className="text-sm font-medium">Device Types</span>
-          </NavLink>
           <NavLink to="/settings/sensors" className={settingsLinkClass}>
-            <Activity size={18} className="shrink-0" />
+            <Gauge size={18} className="shrink-0" />
             <span className="text-sm font-medium">Sensors</span>
+          </NavLink>
+          <NavLink to="/settings/device-types" className={settingsLinkClass}>
+            <Shapes size={18} className="shrink-0" />
+            <span className="text-sm font-medium">Device Types</span>
           </NavLink>
         </>
       ) : null}

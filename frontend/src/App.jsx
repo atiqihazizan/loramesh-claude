@@ -19,8 +19,8 @@ import UsersPage from './pages/settings/UsersPage.jsx';
 import DevicesPage from './pages/settings/DevicesPage.jsx';
 import SitesPage from './pages/settings/SitesPage.jsx';
 import MyAccountPage from './pages/settings/MyAccountPage.jsx';
-import DeviceTypesPage from './pages/settings/DeviceTypesPage.jsx';
-import SensorsPage from './pages/settings/SensorsPage.jsx';
+import SensorsPage from './pages/settings/SensorsPage.jsx';     // E5-a
+import DeviceTypesPage from './pages/settings/DeviceTypesPage.jsx'; // E5-a
 import HistoricalPage from './historical/HistoricalPage.jsx';
 
 export default function App() {
@@ -80,8 +80,8 @@ export default function App() {
             <Route path="/settings/sites" element={<SitesPage />} />
             <Route path="/settings/users" element={<UsersPage />} />
             <Route path="/settings/account" element={<MyAccountPage />} />
-            <Route path="/settings/device-types" element={<DeviceTypesPage />} />
             <Route path="/settings/sensors" element={<SensorsPage />} />
+            <Route path="/settings/device-types" element={<DeviceTypesPage />} />
           </Route>
 
           {/* --- Kumpulan DASHBOARD — guna DashboardLayout (sidebar + kandungan) --- */}
