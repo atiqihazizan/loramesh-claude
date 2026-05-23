@@ -54,7 +54,6 @@ export async function getLiveSnapshot(agencyId) {
       device_id: r.device_id,
       name: dev?.name || null,
       is_static: dev?.is_static || false,
-      data_type: r.device_type?.code || null,
       device_type_id: r.device_type_id,
       device_type: r.device_type,
       latitude: r.latitude,

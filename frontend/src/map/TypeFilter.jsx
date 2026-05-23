@@ -21,7 +21,7 @@ import { useMapContext } from './MapContext.jsx';
 // Kunci type bagi satu device.
 // Medan dari /api/devices bernama `type` (bukan device_type).
 function typeCodeOf(device) {
-  return device.type?.code || device.data_type || '__none__';
+  return device.type?.code || '__none__';
 }
 
 export default function TypeFilter() {
@@ -49,7 +49,7 @@ export default function TypeFilter() {
       if (!map.has(code)) {
         map.set(code, {
           code,
-          name: d.type?.name || d.data_type || 'No type',
+          name: d.type?.name || 'No type',
           color_code: d.type?.color_code || '#808080',
           devices: [],
         });

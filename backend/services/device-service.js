@@ -78,7 +78,6 @@ export async function listDevices({ user, agencyIdFilter, search }) {
     device_mac: d.device_mac,
     name: d.name,
     type: d.device_type,
-    data_type: d.data_type,
     status: d.status,
     is_static: d.is_static,
     logging_enabled: d.logging_enabled,
@@ -127,7 +126,6 @@ export async function getDeviceById(id, user) {
     device_mac: d.device_mac,
     name: d.name,
     type: d.device_type,
-    data_type: d.data_type,
     status: d.status,
     is_static: d.is_static,
     logging_enabled: d.logging_enabled,
@@ -155,7 +153,6 @@ export async function createDevice(payload, user) {
     name,
     device_mac,
     type_id,
-    data_type,
     latitude,
     longitude,
     is_static,
@@ -200,7 +197,6 @@ export async function createDevice(payload, user) {
         name,
         device_mac: device_mac || null,
         type_id: type_id || null,
-        data_type: data_type || null,
         latitude: latitude ?? null,
         longitude: longitude ?? null,
         is_static: is_static ?? false,
@@ -245,7 +241,6 @@ export async function updateDevice(id, patch, user) {
   const allowed = {};
   if (patch.name !== undefined) allowed.name = patch.name;
   if (patch.device_mac !== undefined) allowed.device_mac = patch.device_mac;
-  if (patch.data_type !== undefined) allowed.data_type = patch.data_type;
   if (patch.latitude !== undefined) allowed.latitude = patch.latitude;
   if (patch.longitude !== undefined) allowed.longitude = patch.longitude;
   if (patch.is_static !== undefined) allowed.is_static = patch.is_static;

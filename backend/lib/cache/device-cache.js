@@ -16,7 +16,6 @@ export async function loadDeviceCache() {
       device_mac: true,
       name: true,
       type_id: true,
-      data_type: true,
       is_static: true,
       logging_enabled: true,
       latitude: true,

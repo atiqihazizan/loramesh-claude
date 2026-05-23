@@ -29,7 +29,7 @@ import DevicePopup, { KEEP_POPUP_OPEN } from './DevicePopup.jsx';
 // Kunci type bagi satu device — selaras dengan TypeFilter.
 // Medan dari /api/devices bernama `type` (bukan device_type).
 function typeCodeOf(device) {
-  return device.type?.code || device.data_type || '__none__';
+  return device.type?.code || '__none__';
 }
 
 export default function DeviceLayer() {

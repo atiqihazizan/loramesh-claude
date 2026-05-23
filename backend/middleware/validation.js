@@ -125,7 +125,6 @@ export const validateDeviceCreate = [
   body('name').isString().trim().isLength({ min: 1, max: 255 }),
   body('device_mac').optional({ values: 'falsy' }).isString().isLength({ max: 50 }),
   body('type_id').optional().isInt({ min: 1 }).toInt(),
-  body('data_type').optional().isString().isIn(['MG', 'LR']),
   body('latitude').optional().isFloat({ min: -90, max: 90 }).toFloat(),
   body('longitude').optional().isFloat({ min: -180, max: 180 }).toFloat(),
   body('is_static').optional().isBoolean().toBoolean(),

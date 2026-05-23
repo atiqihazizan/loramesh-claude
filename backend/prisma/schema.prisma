@@ -154,7 +154,6 @@ model devices {
   device_mac String? @db.VarChar(50)
   name       String  @db.VarChar(255)
   type_id    Int?    @db.UnsignedInt
-  data_type  String? @db.VarChar(20)           // MG | LR
   status     String? @db.VarChar(50)
 
   // Position (for static devices; mobile devices use live_tracking)

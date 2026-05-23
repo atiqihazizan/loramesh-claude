@@ -1,6 +1,5 @@
 // lib/cache/device-type-cache.js
-// Cache device_type master list. Lookup by code (the value used in payload's
-// data_type field) and by id.
+// Cache device_type master list. Lookup by code (payload type code) and by id.
 
 import prisma from '../prisma.js';
 
@@ -31,7 +30,7 @@ export async function loadDeviceTypeCache() {
 }
 
 /**
- * Lookup by code (= payload data_type value). Returns null if not found.
+ * Lookup by code (= payload type code). Returns null if not found.
  */
 export function getDeviceTypeByCode(code) {
   if (!code) return null;

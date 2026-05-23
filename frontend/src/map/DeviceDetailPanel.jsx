@@ -76,7 +76,7 @@ export default function DeviceDetailPanel() {
   const color = statusColor(device.status);
   const name = device.name || device.device_id;
   // Medan dari /api/devices bernama `type` (bukan device_type).
-  const typeName = device.type?.name || device.data_type || '—';
+  const typeName = device.type?.name || '—';
 
   return (
     <div

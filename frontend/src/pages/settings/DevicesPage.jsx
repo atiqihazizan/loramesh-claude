@@ -56,7 +56,6 @@ export default function DevicesPage() {
       label: 'Type',
       render: (row) => row.type?.name ?? '—',
     },
-    { key: 'data_type', label: 'Data' },
     {
       key: 'is_static',
       label: 'Static',

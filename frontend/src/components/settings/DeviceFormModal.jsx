@@ -12,7 +12,6 @@ function emptyCreateForm() {
     name: '',
     device_mac: '',
     type_id: '',
-    data_type: 'MG',
     latitude: '',
     longitude: '',
     is_static: false,
@@ -26,7 +25,6 @@ function deviceToForm(device) {
     name: device.name ?? '',
     device_mac: device.device_mac ?? '',
     type_id: device.type?.id ? String(device.type.id) : '',
-    data_type: device.data_type || 'MG',
     latitude: device.latitude != null ? String(device.latitude) : '',
     longitude: device.longitude != null ? String(device.longitude) : '',
     is_static: Boolean(device.is_static),
@@ -71,7 +69,6 @@ export default function DeviceFormModal({
       device_id: form.device_id.trim(),
       name: form.name.trim(),
       device_mac: form.device_mac.trim() || undefined,
-      data_type: form.data_type || undefined,
       is_static: form.is_static,
       logging_enabled: form.logging_enabled,
     };
@@ -167,20 +164,6 @@ export default function DeviceFormModal({
                     {t.name}
                   </option>
                 ))}
-              </select>
-            </div>
-            <div>
-              <label className="label" htmlFor="dev-dt">
-                Data type
-              </label>
-              <select
-                id="dev-dt"
-                className="input"
-                value={form.data_type}
-                onChange={(e) => setField('data_type', e.target.value)}
-              >
-                <option value="MG">MG</option>
-                <option value="LR">LR</option>
               </select>
             </div>
             <div>

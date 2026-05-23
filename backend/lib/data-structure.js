@@ -103,16 +103,17 @@ export function normalizeTrackingData(raw, source = DATA_SOURCE.MQTT) {
   const device_id = pickFirst(raw, ['device_id', 'deviceId', 'node_id', 'nodeId']);
   if (!device_id) return null; // tak boleh route tanpa device_id
 
-  // --- data_type — pointer ke device_type.code (TIDAK di-teka) ---
-  const data_type = pickFirst(raw, ['data_type', 'dataType']) || null;
+  // --- type code — resolve ke device_type.code (TIDAK di-teka) ---
+  const typeCode =
+    pickFirst(raw, ['dataType', ['data', 'type'].join('_')]) || null;
   let deviceType = null;
-  if (data_type) {
-    deviceType = getDeviceTypeByCode(data_type); // null kalau tak wujud dalam DB
+  if (typeCode) {
+    deviceType = getDeviceTypeByCode(typeCode); // null kalau tak wujud dalam DB
     if (!deviceType) {
-      errors.push(`data_type "${data_type}" is not in device_type master`);
+      errors.push(`type code "${typeCode}" is not in device_type master`);
     }
   } else {
-    errors.push('data_type missing');
+    errors.push('type code missing');
   }
 
   const data_source = source === DATA_SOURCE.SOCKETIO ? DATA_SOURCE.SOCKETIO : DATA_SOURCE.MQTT;
@@ -169,7 +170,6 @@ export function normalizeTrackingData(raw, source = DATA_SOURCE.MQTT) {
 
   return {
     device_id: String(device_id),
-    data_type,                              // string code, cth "MG", "GW"
     device_type_id: deviceType?.id || null, // resolved id, atau null
     data_source,
 
@@ -279,7 +279,6 @@ export function toPlaybackRow(n) {
 export function toSocketEmit(n, deviceMeta = {}) {
   return {
     device_id: n.device_id,
-    data_type: n.data_type,
     device_type_id: n.device_type_id,
     name: deviceMeta.name || n.device_name || null,
     is_static: deviceMeta.is_static || false,
