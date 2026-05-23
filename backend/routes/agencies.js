@@ -3,7 +3,7 @@
 
 import express from 'express';
 import { authenticateJwt } from '../middleware/auth-jwt.js';
-import { requireSuperadmin } from '../middleware/auth-role.js';
+import { requireSuperadmin, requireAgencyAdmin, canAccessAgency } from '../middleware/auth-role.js';
 import {
   validateId,
   validateAgencyCreate,
@@ -109,16 +109,20 @@ router.delete(
   }
 );
 
-// ── E5-c: provisioning token (SUPERADMIN) ──
+// ── E5-c: provisioning token (ADMIN_AGENCY+ own agency; SUPERADMIN any) ──
 
 router.get(
   '/:id/provision-token',
   authenticateJwt,
-  requireSuperadmin,
+  requireAgencyAdmin,
   validateId,
   async (req, res, next) => {
     try {
-      const result = await getAgencyTokenStatus(parseInt(req.params.id, 10));
+      const agencyId = parseInt(req.params.id, 10);
+      if (!canAccessAgency(req.user, agencyId)) {
+        return res.status(403).json({ error: 'Forbidden — agency mismatch' });
+      }
+      const result = await getAgencyTokenStatus(agencyId);
       return res.json(result);
     } catch (err) {
       if (err.status) return res.status(err.status).json({ error: err.message });
@@ -130,11 +134,15 @@ router.get(
 router.post(
   '/:id/provision-token',
   authenticateJwt,
-  requireSuperadmin,
+  requireAgencyAdmin,
   validateId,
   async (req, res, next) => {
     try {
-      const result = await generateAgencyToken(parseInt(req.params.id, 10));
+      const agencyId = parseInt(req.params.id, 10);
+      if (!canAccessAgency(req.user, agencyId)) {
+        return res.status(403).json({ error: 'Forbidden — agency mismatch' });
+      }
+      const result = await generateAgencyToken(agencyId);
       return res.status(201).json(result);
     } catch (err) {
       if (err.status) return res.status(err.status).json({ error: err.message });
@@ -146,11 +154,15 @@ router.post(
 router.delete(
   '/:id/provision-token',
   authenticateJwt,
-  requireSuperadmin,
+  requireAgencyAdmin,
   validateId,
   async (req, res, next) => {
     try {
-      const result = await endAgencyToken(parseInt(req.params.id, 10));
+      const agencyId = parseInt(req.params.id, 10);
+      if (!canAccessAgency(req.user, agencyId)) {
+        return res.status(403).json({ error: 'Forbidden — agency mismatch' });
+      }
+      const result = await endAgencyToken(agencyId);
       return res.json(result);
     } catch (err) {
       if (err.status) return res.status(err.status).json({ error: err.message });

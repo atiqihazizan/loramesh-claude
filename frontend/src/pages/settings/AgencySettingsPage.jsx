@@ -8,17 +8,22 @@ import { useAgencies } from '../../hooks/useAgencies.js';
 import { useAgencySettings } from '../../hooks/useAgencySettings.js';
 import SuperadminAgencyPicker from '../../components/settings/SuperadminAgencyPicker.jsx';
 import SettingsPageHeader from '../../components/settings/SettingsPageHeader.jsx';
+import SettingsSection from '../../components/settings/SettingsSection.jsx';
 import AgencySettingsForm from '../../components/settings/AgencySettingsForm.jsx';
+import ProvisioningPanel from '../../components/settings/ProvisioningPanel.jsx';
 
 export default function AgencySettingsPage() {
   const isAgencyAdmin = useAuthStore((s) => s.isAgencyAdmin());
   const isSuperadmin = useAuthStore((s) => s.isSuperadmin());
+  const userAgencyId = useAuthStore((s) => s.user?.agency?.id);
   const { agencies, isLoading: agenciesLoading } = useAgencies();
   const [superadminAgencyId, setSuperadminAgencyId] = useState(null);
 
   const agencyTargetId = isSuperadmin
     ? superadminAgencyId ?? agencies[0]?.id ?? null
     : undefined;
+
+  const provisionAgencyId = isSuperadmin ? agencyTargetId : userAgencyId ?? null;
 
   const agencySettings = useAgencySettings(agencyTargetId);
   const adminReady = !isSuperadmin || agencyTargetId != null;
@@ -58,6 +63,19 @@ export default function AgencySettingsPage() {
               saveError={agencySettings.saveError}
             />
           )
+        ) : null}
+
+        {provisionAgencyId != null ? (
+          <SettingsSection
+            title="Device provisioning"
+            description={
+              isSuperadmin
+                ? 'Generate an enrollment token (QR) for devices to join the selected agency.'
+                : 'Generate an enrollment token (QR) for devices to join your agency.'
+            }
+          >
+            <ProvisioningPanel agencyId={provisionAgencyId} />
+          </SettingsSection>
         ) : null}
       </div>
     </div>
