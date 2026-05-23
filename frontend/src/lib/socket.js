@@ -14,8 +14,11 @@ import { io } from 'socket.io-client';
 
 // Socket server URL — same origin as the API host (no /api path).
 const SOCKET_URL =
-  import.meta.env.VITE_SOCKET_URL ??
-  (import.meta.env.PROD ? undefined : 'http://localhost:5001');
+  import.meta.env.VITE_SOCKET_URL != null && import.meta.env.VITE_SOCKET_URL !== ''
+    ? import.meta.env.VITE_SOCKET_URL.replace(/\/+$/, '')
+    : import.meta.env.PROD
+      ? undefined
+      : 'http://localhost:5002';
 
 let socket = null;
 

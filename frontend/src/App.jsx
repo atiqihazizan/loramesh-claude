@@ -8,6 +8,7 @@ import { useAuthStore } from './store/authStore.js';
 import { RequireAuth, RequireSuperadmin, RedirectIfAuth } from './components/RouteGuards.jsx';
 import PlaceholderPage from './pages/PlaceholderPage.jsx';
 import SettingsIndexRedirect from './pages/settings/SettingsIndexRedirect.jsx';
+import { routerBasename } from './lib/baseUrl.js';
 
 const LoginPage = lazy(() => import('./pages/LoginPage.jsx'));
 
@@ -46,7 +47,7 @@ export default function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
+      <BrowserRouter basename={routerBasename}>
         <Suspense fallback={<RouteFallback />}>
           <Routes>
             {/* Login */}

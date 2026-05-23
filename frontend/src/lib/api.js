@@ -2,13 +2,22 @@
 // Axios instance — auto sertakan JWT, auto handle 401.
 
 import axios from 'axios';
+import { loginPath } from './baseUrl.js';
 
-const API_URL =
-  import.meta.env.VITE_API_URL ??
-  (import.meta.env.PROD ? '' : 'http://localhost:5001');
+function originWithoutTrailingSlash(url) {
+  if (url == null || url === '') return '';
+  return String(url).replace(/\/+$/, '');
+}
+
+const API_ORIGIN =
+  import.meta.env.VITE_API_URL != null && import.meta.env.VITE_API_URL !== ''
+    ? originWithoutTrailingSlash(import.meta.env.VITE_API_URL)
+    : import.meta.env.PROD
+      ? ''
+      : 'http://localhost:5002';
 
 export const api = axios.create({
-  baseURL: `${API_URL}/api`,
+  baseURL: `${API_ORIGIN}/api`,
   headers: { 'Content-Type': 'application/json' },
 });
 
@@ -30,8 +39,9 @@ api.interceptors.response.use(
       // Jangan auto-logout untuk salah login biasa
       if (code === 'TOKEN_EXPIRED' || code === 'TOKEN_INVALID' || code === 'USER_INVALID') {
         localStorage.removeItem('token');
-        if (window.location.pathname !== '/login') {
-          window.location.href = '/login';
+        const toLogin = loginPath();
+        if (window.location.pathname !== toLogin) {
+          window.location.href = toLogin;
         }
       }
     }

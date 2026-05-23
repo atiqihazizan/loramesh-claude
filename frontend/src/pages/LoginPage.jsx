@@ -6,8 +6,9 @@ import { Eye, EyeOff, User, Lock, MapPin, Radio, Activity } from 'lucide-react';
 import { useAuthStore } from '../store/authStore.js';
 import Spinner from '../components/ui/Spinner.jsx';
 import AppLogo from '../components/ui/AppLogo.jsx';
+import { publicAsset } from '../lib/baseUrl.js';
 
-const BG = 'url(/bg.webp)';
+const BG = `url(${publicAsset('bg.webp')})`;
 
 const FEATURES = [
   { icon: MapPin, label: 'Live tracking' },

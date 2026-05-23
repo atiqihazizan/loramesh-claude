@@ -1,7 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
+import { DEFAULT_APP_BASE, normalizeAppBase } from './appBase.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const backendPublicDir = path.resolve(__dirname, '../backend/public')
@@ -20,17 +21,23 @@ function vendorChunk(id) {
 }
 
 // https://vite.dev/config/
-export default defineConfig({
-  plugins: [react()],
-  base: '/',
-  build: {
-    outDir: backendPublicDir,
-    emptyOutDir: true,
-    rollupOptions: {
-      output: {
-        manualChunks: vendorChunk,
+// `base` dari VITE_APP_BASE (.env) — app guna import.meta.env.BASE_URL (src/lib/baseUrl.js).
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, __dirname, '')
+  const base = normalizeAppBase(env.VITE_APP_BASE || DEFAULT_APP_BASE)
+
+  return {
+    plugins: [react()],
+    base,
+    build: {
+      outDir: backendPublicDir,
+      emptyOutDir: true,
+      rollupOptions: {
+        output: {
+          manualChunks: vendorChunk,
+        },
       },
+      chunkSizeWarningLimit: 1100,
     },
-    chunkSizeWarningLimit: 1100,
-  },
+  }
 })

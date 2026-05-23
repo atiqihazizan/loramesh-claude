@@ -78,7 +78,7 @@ cd frontend && npm run build    # atau: cd backend && npm run build:ui
 cd backend && npm start         # NODE_ENV=production
 ```
 
-**Dev:** kekal Vite `:5173` + backend `:5001`; `.env` frontend `VITE_API_URL=http://localhost:5001`.
+**Dev:** kekal Vite `:5173` + backend `:5002`; `.env` frontend `VITE_API_URL=http://localhost:5002`.
 
 ---
 

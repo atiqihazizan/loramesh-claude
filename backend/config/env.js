@@ -42,7 +42,7 @@ process.env.TZ = need('TIMEZONE', 'Asia/Kuala_Lumpur');
 export const env = {
   NODE_ENV: need('NODE_ENV', 'development'),
   IS_PRODUCTION: process.env.NODE_ENV === 'production',
-  PORT: int('PORT', 5001),
+  PORT: int('PORT', 5002),
   TIMEZONE: process.env.TZ,
 
   // Database
@@ -89,7 +89,7 @@ export const env = {
   LORA_HEARTBEAT_TIMEOUT: int('LORA_HEARTBEAT_TIMEOUT', 120000),
 
   // Internal
-  API_BASE_URL: need('API_BASE_URL', 'http://localhost:5001'),
+  API_BASE_URL: need('API_BASE_URL', 'http://localhost:5002'),
 
   // Provisioning
   PROVISIONING_NONCE_TTL_MIN: int('PROVISIONING_NONCE_TTL_MIN', 1440),
