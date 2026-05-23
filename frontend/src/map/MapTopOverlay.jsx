@@ -66,9 +66,9 @@ export default function MapTopOverlay() {
 
   // Senarai navigasi — tambah Admin untuk superadmin.
   const items = [...navItems];
-  if (isSuperadmin) {
-    items.push({ to: '/admin', icon: Shield, label: 'Admin' });
-  }
+  // if (isSuperadmin) {
+  //   items.push({ to: '/admin', icon: Shield, label: 'Admin' });
+  // }
 
   return (
     <>

@@ -39,7 +39,7 @@ export default function SettingsSidebar() {
       className="w-52 shrink-0 bg-white border-r border-slate-200 flex flex-col py-4 z-20 overflow-y-auto"
       aria-label="Settings navigation"
     >
-      <p className="px-4 mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400 flex items-center gap-1.5">
+      {/* <p className="px-4 mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400 flex items-center gap-1.5">
         <ArrowLeft size={12} aria-hidden />
         Back to app
       </p>
@@ -52,7 +52,7 @@ export default function SettingsSidebar() {
         <span className="font-medium">Historical</span>
       </NavLink>
 
-      <hr className="my-4 mx-4 border-slate-200" />
+      <hr className="my-4 mx-4 border-slate-200" /> */}
 
       <p className="px-4 mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
         Settings

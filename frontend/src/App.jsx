@@ -1,28 +1,41 @@
 // src/App.jsx
-import { useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from './lib/queryClient.js';
 import { useAuthStore } from './store/authStore.js';
 
 import { RequireAuth, RequireSuperadmin, RedirectIfAuth } from './components/RouteGuards.jsx';
-import MapLayout from './components/layout/MapLayout.jsx';            // E2-shell — layout peta
-import DashboardLayout from './components/layout/DashboardLayout.jsx'; // E2-shell — layout dashboard
-import SettingsLayout from './components/layout/SettingsLayout.jsx';   // E3-a — settings layout
-import HistoricalLayout from './components/layout/HistoricalLayout.jsx';
-import LoginPage from './pages/LoginPage.jsx';
 import PlaceholderPage from './pages/PlaceholderPage.jsx';
-import MapPage from './pages/MapPage.jsx';   // E2 — halaman peta
 import SettingsIndexRedirect from './pages/settings/SettingsIndexRedirect.jsx';
-import AgencySettingsPage from './pages/settings/AgencySettingsPage.jsx';
-import UsersPage from './pages/settings/UsersPage.jsx';
-import DevicesPage from './pages/settings/DevicesPage.jsx';
-import SitesPage from './pages/settings/SitesPage.jsx';
-import MyAccountPage from './pages/settings/MyAccountPage.jsx';
-import HistoricalPage from './historical/HistoricalPage.jsx';
-import SensorsPage from './pages/settings/SensorsPage.jsx';         // E5-a
-import DeviceTypesPage from './pages/settings/DeviceTypesPage.jsx'; // E5-a
-import AgenciesPage from './pages/settings/AgenciesPage.jsx'; // E5-b1
+
+const LoginPage = lazy(() => import('./pages/LoginPage.jsx'));
+
+const MapLayout = lazy(() => import('./components/layout/MapLayout.jsx'));
+const MapPage = lazy(() => import('./pages/MapPage.jsx'));
+const HistoricalLayout = lazy(() => import('./components/layout/HistoricalLayout.jsx'));
+const HistoricalPage = lazy(() => import('./historical/HistoricalPage.jsx'));
+const SettingsLayout = lazy(() => import('./components/layout/SettingsLayout.jsx'));
+const DashboardLayout = lazy(() => import('./components/layout/DashboardLayout.jsx'));
+const AgencySettingsPage = lazy(() => import('./pages/settings/AgencySettingsPage.jsx'));
+const UsersPage = lazy(() => import('./pages/settings/UsersPage.jsx'));
+const DevicesPage = lazy(() => import('./pages/settings/DevicesPage.jsx'));
+const SitesPage = lazy(() => import('./pages/settings/SitesPage.jsx'));
+const MyAccountPage = lazy(() => import('./pages/settings/MyAccountPage.jsx'));
+const SensorsPage = lazy(() => import('./pages/settings/SensorsPage.jsx'));
+const DeviceTypesPage = lazy(() => import('./pages/settings/DeviceTypesPage.jsx'));
+const AgenciesPage = lazy(() => import('./pages/settings/AgenciesPage.jsx'));
+
+function RouteFallback() {
+  return (
+    <div className="flex h-full min-h-[40vh] w-full items-center justify-center bg-slate-50">
+      <div
+        className="h-8 w-8 animate-spin rounded-full border-2 border-slate-300 border-t-blue-600"
+        aria-hidden
+      />
+    </div>
+  );
+}
 
 export default function App() {
   const init = useAuthStore((s) => s.init);
@@ -34,79 +47,80 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <Routes>
-          {/* Login */}
-          <Route
-            path="/login"
-            element={
-              <RedirectIfAuth>
-                <LoginPage />
-              </RedirectIfAuth>
-            }
-          />
-
-          {/* --- Kumpulan PETA — guna MapLayout (peta penuh + overlay) --- */}
-          <Route
-            element={
-              <RequireAuth>
-                <MapLayout />
-              </RequireAuth>
-            }
-          >
-            <Route path="/" element={<MapPage />} />
-          </Route>
-
-          {/* --- E4 Historical — own layout --- */}
-          <Route
-            element={
-              <RequireAuth>
-                <HistoricalLayout />
-              </RequireAuth>
-            }
-          >
-            <Route path="/historical" element={<HistoricalPage />} />
-          </Route>
-
-          {/* --- E3 Settings — own layout + sub-routes --- */}
-          <Route
-            element={
-              <RequireAuth>
-                <SettingsLayout />
-              </RequireAuth>
-            }
-          >
-            <Route path="/settings" element={<SettingsIndexRedirect />} />
-            <Route path="/settings/agency" element={<AgencySettingsPage />} />
-            <Route path="/settings/devices" element={<DevicesPage />} />
-            <Route path="/settings/sites" element={<SitesPage />} />
-            <Route path="/settings/users" element={<UsersPage />} />
-            <Route path="/settings/account" element={<MyAccountPage />} />
-            <Route path="/settings/agencies" element={<AgenciesPage />} />
-            <Route path="/settings/sensors" element={<SensorsPage />} />
-            <Route path="/settings/device-types" element={<DeviceTypesPage />} />
-          </Route>
-
-          {/* --- Kumpulan DASHBOARD — guna DashboardLayout (sidebar + kandungan) --- */}
-          <Route
-            element={
-              <RequireAuth>
-                <DashboardLayout />
-              </RequireAuth>
-            }
-          >
+        <Suspense fallback={<RouteFallback />}>
+          <Routes>
+            {/* Login */}
             <Route
-              path="/admin"
+              path="/login"
               element={
-                <RequireSuperadmin>
-                  <PlaceholderPage title="Admin" />
-                </RequireSuperadmin>
+                <RedirectIfAuth>
+                  <LoginPage />
+                </RedirectIfAuth>
               }
             />
-          </Route>
 
-          {/* Apa-apa lain → 404 */}
-          <Route path="*" element={<PlaceholderPage title="404 — Page not found" />} />
-        </Routes>
+            {/* --- Kumpulan PETA — guna MapLayout (peta penuh + overlay) --- */}
+            <Route
+              element={
+                <RequireAuth>
+                  <MapLayout />
+                </RequireAuth>
+              }
+            >
+              <Route path="/" element={<MapPage />} />
+            </Route>
+
+            {/* --- E4 Historical — own layout --- */}
+            <Route
+              element={
+                <RequireAuth>
+                  <HistoricalLayout />
+                </RequireAuth>
+              }
+            >
+              <Route path="/historical" element={<HistoricalPage />} />
+            </Route>
+
+            {/* --- E3 Settings — own layout + sub-routes --- */}
+            <Route
+              element={
+                <RequireAuth>
+                  <SettingsLayout />
+                </RequireAuth>
+              }
+            >
+              <Route path="/settings" element={<SettingsIndexRedirect />} />
+              <Route path="/settings/agency" element={<AgencySettingsPage />} />
+              <Route path="/settings/devices" element={<DevicesPage />} />
+              <Route path="/settings/sites" element={<SitesPage />} />
+              <Route path="/settings/users" element={<UsersPage />} />
+              <Route path="/settings/account" element={<MyAccountPage />} />
+              <Route path="/settings/agencies" element={<AgenciesPage />} />
+              <Route path="/settings/sensors" element={<SensorsPage />} />
+              <Route path="/settings/device-types" element={<DeviceTypesPage />} />
+            </Route>
+
+            {/* --- Kumpulan DASHBOARD --- */}
+            <Route
+              element={
+                <RequireAuth>
+                  <DashboardLayout />
+                </RequireAuth>
+              }
+            >
+              <Route
+                path="/admin"
+                element={
+                  <RequireSuperadmin>
+                    <PlaceholderPage title="Admin" />
+                  </RequireSuperadmin>
+                }
+              />
+            </Route>
+
+            <Route path="*" element={<PlaceholderPage title="404 — Page not found" />} />
+          </Routes>
+        </Suspense>
       </BrowserRouter>
     </QueryClientProvider>
   );

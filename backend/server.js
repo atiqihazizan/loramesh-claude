@@ -2,6 +2,9 @@
 // Backend entry point — Phase C: HTTP + Socket.IO + MQTT.
 
 import http from 'node:http';
+import path from 'node:path';
+import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import express from 'express';
 import compression from 'compression';
 import helmet from 'helmet';
@@ -25,6 +28,11 @@ import { initMqttClient, disconnectMqtt, isMqttConnected } from './realtime/mqtt
 import { startHeartbeatWatchdog, stopHeartbeatWatchdog } from './jobs/heartbeat-watchdog.js';
 import { startCacheCleanup, stopCacheCleanup } from './jobs/cache-cleanup.js';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const publicDir = path.join(__dirname, 'public');
+const spaIndexPath = path.join(publicDir, 'index.html');
+const serveSpa = fs.existsSync(spaIndexPath);
+
 const app = express();
 
 // ============================================
@@ -46,14 +54,33 @@ app.use('/api', enforcePasswordChange);
 // ============================================
 app.use('/api', apiRoutes);
 
-app.get('/', (req, res) => {
-  res.json({
-    name: 'LoRa Backend (claude)',
-    version: '3.0.0',
-    status: 'ok',
-    mqtt: isMqttConnected() ? 'connected' : 'disconnected',
+// Static UI (Vite build → backend/public) + SPA fallback for client-side routes
+if (serveSpa) {
+  app.use(
+    express.static(publicDir, {
+      index: false,
+      maxAge: env.IS_PRODUCTION ? '1d' : 0,
+    })
+  );
+
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api')) return next();
+    if (req.method !== 'GET' && req.method !== 'HEAD') return next();
+    res.sendFile(spaIndexPath, (err) => {
+      if (err) next(err);
+    });
   });
-});
+} else {
+  app.get('/', (req, res) => {
+    res.json({
+      name: 'LoRa Backend (claude)',
+      version: '3.0.0',
+      status: 'ok',
+      mqtt: isMqttConnected() ? 'connected' : 'disconnected',
+      ui: 'Run `npm run build` in frontend/ to populate backend/public',
+    });
+  });
+}
 
 app.use(notFoundHandler);
 app.use(errorHandler);

@@ -13,6 +13,8 @@ dist/
 build/
 **/dist/
 **/build/
+backend/public/*
+!backend/public/.gitkeep
 **/backup/
 **/**/backup/
 

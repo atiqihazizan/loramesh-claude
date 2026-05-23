@@ -12,7 +12,7 @@
 // ----------------------------------------------------------------
 
 import { Marker } from 'react-map-gl/maplibre';
-import * as LucideIcons from 'lucide-react';
+import { resolveDeviceTypeIcon } from '../lib/deviceTypeIcons.js';
 
 // Warna status — untuk titik kecil di sudut pin.
 const STATUS_COLOR = {
@@ -32,14 +32,8 @@ function typeColor(device) {
 }
 
 // Tukar nama ikon (cth "map-pin" / "Car") → komponen Lucide.
-// Lucide guna PascalCase. Jika tiada, guna MapPin.
 function resolveIcon(iconName) {
-  if (!iconName) return LucideIcons.MapPin;
-  const pascal = iconName
-    .split(/[-_\s]/)
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join('');
-  return LucideIcons[pascal] || LucideIcons.MapPin;
+  return resolveDeviceTypeIcon(iconName);
 }
 
 /**

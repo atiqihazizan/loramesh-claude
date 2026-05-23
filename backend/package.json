@@ -22,7 +22,8 @@
     "seed:pilot": "node scripts/seed-pilot-data.js",
     "retention:metadata": "node jobs/retention-manager.js metadata",
     "retention:archive": "node jobs/retention-manager.js archive",
-    "retention:purge": "node jobs/retention-manager.js purge"
+    "retention:purge": "node jobs/retention-manager.js purge",
+    "build:ui": "npm run build --prefix ../frontend"
   },
   "prisma": {
     "seed": "node prisma/seed.js"

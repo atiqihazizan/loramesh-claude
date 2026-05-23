@@ -46,9 +46,9 @@ export default function TopBar() {
   };
 
   const items = [...navItems];
-  if (isSuperadmin) {
-    items.push({ to: '/admin', icon: Shield, label: 'Admin' });
-  }
+  // if (isSuperadmin) {
+  //   items.push({ to: '/admin', icon: Shield, label: 'Admin' });
+  // }
 
   return (
     <header className="h-14 bg-white border-b border-slate-200 flex items-center
