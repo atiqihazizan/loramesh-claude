@@ -1,5 +1,6 @@
-// E4-c — historical page: Route / Sensor tabs.
-// E4-d — Sensor tab fully built.
+// Historical page: Route / Sensor tabs.
+// Route tab: track map + summary. Sensor tab: reading table.
+// Route tab (tracking) is hidden for static devices.
 
 import { useState } from 'react';
 import { Route, Activity } from 'lucide-react';
@@ -8,36 +9,12 @@ import { usePlayback } from './usePlayback.js';
 import RouteTab from './RouteTab.jsx';
 import SensorTab from './SensorTab.jsx';
 
-export default function HistoricalPage() {
-  const { query } = useHistoricalContext();
+function HistoricalPageContent({ query }) {
+  const isStatic = query.isStatic === true;
+  // Static devices have no route — start on Sensor.
+  const [tab, setTab] = useState(isStatic ? 'sensor' : 'route');
+  // Static devices still need their sensor data — always fetch.
   const playback = usePlayback(query);
-
-  // Tab state. Default is derived per-query from a key on the
-  // wrapper so static devices open on Sensor without a setState
-  // inside an effect.
-  return (
-    <HistoricalPageInner
-      key={`${query?.deviceId || 'none'}:${query?.from || ''}`}
-      query={query}
-      playback={playback}
-    />
-  );
-}
-
-function HistoricalPageInner({ query, playback }) {
-  // Initial tab decided once, when this instance mounts (the key in
-  // the parent remounts it whenever the query changes).
-  const [tab, setTab] = useState(query?.isStatic ? 'sensor' : 'route');
-
-  if (!query) {
-    return (
-      <div className="h-full flex items-center justify-center">
-        <p className="text-slate-500 text-sm">
-          Select an agency, device, and date range, then click View.
-        </p>
-      </div>
-    );
-  }
 
   const tabClass = (active) =>
     'flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ' +
@@ -57,16 +34,18 @@ function HistoricalPageInner({ query, playback }) {
         </p>
       </div>
 
-      {/* Tabs */}
+      {/* Tabs — Route (tracking) hidden for static devices */}
       <div className="flex border-b border-slate-200 px-4 mt-2">
-        <button
-          type="button"
-          className={tabClass(tab === 'route')}
-          onClick={() => setTab('route')}
-        >
-          <Route size={16} />
-          Route
-        </button>
+        {!isStatic ? (
+          <button
+            type="button"
+            className={tabClass(tab === 'route')}
+            onClick={() => setTab('route')}
+          >
+            <Route size={16} />
+            Route
+          </button>
+        ) : null}
         <button
           type="button"
           className={tabClass(tab === 'sensor')}
@@ -79,7 +58,7 @@ function HistoricalPageInner({ query, playback }) {
 
       {/* Tab content */}
       <div className="flex-1 min-h-0">
-        {tab === 'route' ? (
+        {!isStatic && tab === 'route' ? (
           <RouteTab
             query={query}
             track={playback.track}
@@ -98,5 +77,26 @@ function HistoricalPageInner({ query, playback }) {
         )}
       </div>
     </div>
+  );
+}
+
+export default function HistoricalPage() {
+  const { query } = useHistoricalContext();
+
+  if (!query) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <p className="text-slate-500 text-sm">
+          Select an agency, device, and date range, then click View.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <HistoricalPageContent
+      key={`${query.deviceId}:${query.from}:${query.to}`}
+      query={query}
+    />
   );
 }

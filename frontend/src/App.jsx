@@ -19,9 +19,9 @@ import UsersPage from './pages/settings/UsersPage.jsx';
 import DevicesPage from './pages/settings/DevicesPage.jsx';
 import SitesPage from './pages/settings/SitesPage.jsx';
 import MyAccountPage from './pages/settings/MyAccountPage.jsx';
-import SensorsPage from './pages/settings/SensorsPage.jsx';     // E5-a
-import DeviceTypesPage from './pages/settings/DeviceTypesPage.jsx'; // E5-a
 import HistoricalPage from './historical/HistoricalPage.jsx';
+import SensorsPage from './pages/settings/SensorsPage.jsx';         // E5-a
+import DeviceTypesPage from './pages/settings/DeviceTypesPage.jsx'; // E5-a
 
 export default function App() {
   const init = useAuthStore((s) => s.init);

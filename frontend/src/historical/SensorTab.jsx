@@ -1,11 +1,10 @@
 // E4-d — Sensor tab: table of sensor readings over time.
-// Data comes from track.points[] (already fetched by usePlayback in E4-c).
+// Data comes from track.points[] (already fetched by usePlayback).
 
 import { useMemo } from 'react';
 import { errMsg } from '../lib/api.js';
 import Spinner from '../components/ui/Spinner.jsx';
 
-// Format a send_dt value into a readable local timestamp.
 function fmtTime(value) {
   if (!value) return '—';
   const d = new Date(value);
@@ -17,8 +16,6 @@ function fmtTime(value) {
   );
 }
 
-// Turn one point's sensor_data into a plain string for display.
-// sensor_data may be: array, object, primitive, or null.
 function sensorText(sensor) {
   if (sensor === null || sensor === undefined) return '—';
   if (Array.isArray(sensor)) {
@@ -39,7 +36,7 @@ function num(v, digits) {
 
 /**
  * @param {object} props
- * @param {object} props.track    /playback/:id response (has points[])
+ * @param {object} props.track     /playback/:id response (has points[])
  * @param {boolean} props.isLoading
  * @param {boolean} props.isError
  * @param {*} props.error
