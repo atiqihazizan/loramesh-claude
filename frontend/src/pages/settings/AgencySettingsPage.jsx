@@ -8,7 +8,9 @@ import { useAgencies } from '../../hooks/useAgencies.js';
 import { useAgencySettings } from '../../hooks/useAgencySettings.js';
 import SuperadminAgencyPicker from '../../components/settings/SuperadminAgencyPicker.jsx';
 import SettingsPageHeader from '../../components/settings/SettingsPageHeader.jsx';
+import SettingsSection from '../../components/settings/SettingsSection.jsx';
 import AgencySettingsForm from '../../components/settings/AgencySettingsForm.jsx';
+import ProvisioningPanel from '../../components/settings/ProvisioningPanel.jsx';
 
 export default function AgencySettingsPage() {
   const isAgencyAdmin = useAuthStore((s) => s.isAgencyAdmin());
@@ -59,6 +61,13 @@ export default function AgencySettingsPage() {
             />
           )
         ) : null}
+
+        <SettingsSection
+          title="Device provisioning"
+          description="Generate enrollment codes for new devices to join this agency."
+        >
+          <ProvisioningPanel />
+        </SettingsSection>
       </div>
     </div>
   );
