@@ -1,5 +1,5 @@
 // E5-b2 — provisioning nonce CRUD.
-// GET/POST /provision, DELETE /provision/:id
+// POST /provision/create, GET /provision/list, DELETE /provision/:id
 // agencyId: superadmin passes target agency; admin agency passes null
 // (backend uses caller's own agency).
 
@@ -15,14 +15,17 @@ async function fetchNonces(agencyId) {
 
 /**
  * @param {number|null} agencyId
+ * @param {boolean} canQuery — when false, the list query is disabled
+ *                             (e.g. superadmin with no agency selected)
  */
-export function useProvisioning(agencyId) {
+export function useProvisioning(agencyId, canQuery = true) {
   const queryClient = useQueryClient();
   const key = ['provisioning', agencyId ?? 'self'];
 
   const query = useQuery({
     queryKey: key,
     queryFn: () => fetchNonces(agencyId),
+    enabled: canQuery,
     staleTime: 15_000,
   });
 
@@ -32,7 +35,7 @@ export function useProvisioning(agencyId) {
     mutationFn: async (payload) => {
       const body = { ...payload };
       if (agencyId != null) body.agency_id = agencyId;
-      const res = await api.post('/provision', body);
+      const res = await api.post('/provision/create', body);
       return res.data;
     },
     onSuccess: invalidate,
