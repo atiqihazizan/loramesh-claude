@@ -1,6 +1,6 @@
 // src/components/layout/TopBar.jsx
 // Bar atas nipis — nama produk, agency, profil user.
-// E3-nav — Map / History / Settings (+ Admin) dalam dropdown profil (selaras MapTopOverlay).
+// E3-nav — Map / History / Settings dalam dropdown profil (selaras MapTopOverlay).
 
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, NavLink } from 'react-router-dom';
@@ -11,7 +11,6 @@ import {
   Map,
   History,
   Settings,
-  Shield,
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore.js';
 import AppLogo from '../ui/AppLogo.jsx';
@@ -26,7 +25,6 @@ export default function TopBar() {
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
-  const isSuperadmin = useAuthStore((s) => s.isSuperadmin());
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
 
@@ -45,10 +43,7 @@ export default function TopBar() {
     navigate('/login');
   };
 
-  const items = [...navItems];
-  // if (isSuperadmin) {
-  //   items.push({ to: '/admin', icon: Shield, label: 'Admin' });
-  // }
+  const items = navItems;
 
   return (
     <header className="h-14 bg-white border-b border-slate-200 flex items-center

@@ -2,7 +2,7 @@
 // ----------------------------------------------------------------
 // Overlay atas peta — versi terapung TopBar E1.
 //
-// E3-nav: navigasi peta (Map/History/Settings/Admin) dipindah ke
+// E3-nav: navigasi peta (Map/History/Settings) dipindah ke
 // DALAM dropdown menu profil — satu klik buka menu, klik kedua
 // navigate. MapNavRail terapung kiri-tengah dibuang.
 //
@@ -22,7 +22,6 @@ import {
   Map,
   History,
   Settings,
-  Shield,
 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore.js';
 import AppLogo from '../components/ui/AppLogo.jsx';
@@ -64,11 +63,7 @@ export default function MapTopOverlay() {
     navigate('/login');
   };
 
-  // Senarai navigasi — tambah Admin untuk superadmin.
-  const items = [...navItems];
-  // if (isSuperadmin) {
-  //   items.push({ to: '/admin', icon: Shield, label: 'Admin' });
-  // }
+  const items = navItems;
 
   return (
     <>
