@@ -88,6 +88,10 @@ export default function SettingsSidebar() {
           <p className="px-4 mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
             Master data
           </p>
+          <NavLink to="/settings/agencies" className={settingsLinkClass}>
+            <Building2 size={18} className="shrink-0" />
+            <span className="text-sm font-medium">Agencies</span>
+          </NavLink>
           <NavLink to="/settings/sensors" className={settingsLinkClass}>
             <Gauge size={18} className="shrink-0" />
             <span className="text-sm font-medium">Sensors</span>

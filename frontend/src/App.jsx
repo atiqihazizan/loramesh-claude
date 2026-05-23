@@ -22,6 +22,7 @@ import MyAccountPage from './pages/settings/MyAccountPage.jsx';
 import HistoricalPage from './historical/HistoricalPage.jsx';
 import SensorsPage from './pages/settings/SensorsPage.jsx';         // E5-a
 import DeviceTypesPage from './pages/settings/DeviceTypesPage.jsx'; // E5-a
+import AgenciesPage from './pages/settings/AgenciesPage.jsx'; // E5-b1
 
 export default function App() {
   const init = useAuthStore((s) => s.init);
@@ -80,6 +81,7 @@ export default function App() {
             <Route path="/settings/sites" element={<SitesPage />} />
             <Route path="/settings/users" element={<UsersPage />} />
             <Route path="/settings/account" element={<MyAccountPage />} />
+            <Route path="/settings/agencies" element={<AgenciesPage />} />
             <Route path="/settings/sensors" element={<SensorsPage />} />
             <Route path="/settings/device-types" element={<DeviceTypesPage />} />
           </Route>
