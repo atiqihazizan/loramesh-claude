@@ -14,7 +14,10 @@ import {
 
 const router = express.Router();
 
-router.get('/', authenticateJwt, requireAgencyAdmin, async (req, res, next) => {
+// GET — any logged-in user (map markers need devices).
+// listDevices() scopes non-SUPERADMIN to their own agency, so a
+// regular user can never see another agency's devices.
+router.get('/', authenticateJwt, async (req, res, next) => {
   try {
     const devices = await listDevices({
       user: req.user,
@@ -28,7 +31,7 @@ router.get('/', authenticateJwt, requireAgencyAdmin, async (req, res, next) => {
   }
 });
 
-router.get('/:id', authenticateJwt, requireAgencyAdmin, validateId, async (req, res, next) => {
+router.get('/:id', authenticateJwt, validateId, async (req, res, next) => {
   try {
     const device = await getDeviceById(parseInt(req.params.id, 10), req.user);
     return res.json({ device });
@@ -38,6 +41,7 @@ router.get('/:id', authenticateJwt, requireAgencyAdmin, validateId, async (req, 
   }
 });
 
+// Mutations — ADMIN_AGENCY+ only.
 router.post(
   '/',
   authenticateJwt,
