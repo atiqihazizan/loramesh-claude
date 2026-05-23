@@ -9,6 +9,7 @@ import { RequireAuth, RequireSuperadmin, RedirectIfAuth } from './components/Rou
 import MapLayout from './components/layout/MapLayout.jsx';            // E2-shell — layout peta
 import DashboardLayout from './components/layout/DashboardLayout.jsx'; // E2-shell — layout dashboard
 import SettingsLayout from './components/layout/SettingsLayout.jsx';   // E3-a — settings layout
+import HistoricalLayout from './components/layout/HistoricalLayout.jsx'; // E4-a — historical layout
 import LoginPage from './pages/LoginPage.jsx';
 import PlaceholderPage from './pages/PlaceholderPage.jsx';
 import MapPage from './pages/MapPage.jsx';   // E2 — halaman peta
@@ -18,6 +19,7 @@ import UsersPage from './pages/settings/UsersPage.jsx';
 import DevicesPage from './pages/settings/DevicesPage.jsx';
 import SitesPage from './pages/settings/SitesPage.jsx';
 import MyAccountPage from './pages/settings/MyAccountPage.jsx';
+import HistoricalPage from './historical/HistoricalPage.jsx'; // E4-a — halaman historical
 
 export default function App() {
   const init = useAuthStore((s) => s.init);
@@ -49,7 +51,17 @@ export default function App() {
             }
           >
             <Route path="/" element={<MapPage />} />
-            <Route path="/historical" element={<PlaceholderPage title="History" />} />
+          </Route>
+
+          {/* --- E4 Historical — own layout --- */}
+          <Route
+            element={
+              <RequireAuth>
+                <HistoricalLayout />
+              </RequireAuth>
+            }
+          >
+            <Route path="/historical" element={<HistoricalPage />} />
           </Route>
 
           {/* --- E3 Settings — own layout + sub-routes --- */}
