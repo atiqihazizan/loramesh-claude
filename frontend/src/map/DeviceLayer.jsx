@@ -14,9 +14,13 @@
 //
 // Penapis type dibaca dari MapContext (hiddenTypeCodes) — ditulis
 // oleh TypeFilter.
+//
+// NOTA: DeviceMarker/DevicePopup membungkus <Marker>/<Popup> dari
+// react-map-gl, yang mesti jadi anak terus <Map>. Jangan bungkus
+// dalam <div> — guna Fragment dengan key.
 // ----------------------------------------------------------------
 
-import { useCallback } from 'react';
+import { Fragment, useCallback } from 'react';
 import { useDevices } from '../hooks/useDevices.js';
 import { useMapContext } from './MapContext.jsx';
 import DeviceMarker from './DeviceMarker.jsx';
@@ -49,7 +53,7 @@ export default function DeviceLayer() {
   return (
     <>
       {visibleDevices.map((device) => (
-        <div key={device.device_id}>
+        <Fragment key={device.device_id}>
           <DeviceMarker
             device={device}
             isSelected={device.device_id === selectedDeviceId}
@@ -62,7 +66,7 @@ export default function DeviceLayer() {
               onClick={() => handleSelect(device)}
             />
           )}
-        </div>
+        </Fragment>
       ))}
     </>
   );
