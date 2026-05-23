@@ -1,4 +1,4 @@
-// E4-c — historical route map. Own MapLibre instance (no live socket).
+// Historical route map. Own MapLibre instance (no live socket).
 // Draws the track as a GeoJSON line + start/end markers.
 
 import { useMemo, useEffect, useRef } from 'react';

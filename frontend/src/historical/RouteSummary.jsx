@@ -1,4 +1,4 @@
-// E4-c — summary panel for a historical route (distance, speed, duration).
+// Summary panel for a historical route (distance, speed, duration).
 
 import { Route, Gauge, Clock, MapPin } from 'lucide-react';
 

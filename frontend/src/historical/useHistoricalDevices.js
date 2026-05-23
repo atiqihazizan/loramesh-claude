@@ -1,4 +1,4 @@
-// E4-b — device list for the historical query form.
+// Device list for the historical query form.
 // GET /devices (optionally scoped by agency_id for superadmin).
 // Non-superadmin: backend locks to their own agency automatically.
 

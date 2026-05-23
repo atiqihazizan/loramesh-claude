@@ -1,5 +1,5 @@
-// E4-c — historical page: Route / Sensor tabs.
-// Route tab fully built (E4-c). Sensor tab placeholder (E4-d).
+// Historical page: Route / Sensor tabs.
+// Route tab: track map + summary. Sensor tab: placeholder.
 
 import { useState, useEffect } from 'react';
 import { Route, Activity } from 'lucide-react';
@@ -80,7 +80,7 @@ export default function HistoricalPage() {
         ) : (
           <div className="h-full flex items-center justify-center p-6">
             <p className="text-sm text-slate-400">
-              Sensor tab coming in E4-d.
+              Sensor tab coming soon.
             </p>
           </div>
         )}

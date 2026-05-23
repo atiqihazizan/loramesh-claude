@@ -1,5 +1,5 @@
-// E4-b — historical sidebar: query form (agency → device → date range → View)
-// E4-b2 — date range chosen via RangeCalendar, constrained by playback bounds.
+// Historical sidebar: query form (agency → device → date range → View).
+// Date range via RangeCalendar, constrained by playback bounds.
 
 import { useState, useMemo } from 'react';
 import { History, Search } from 'lucide-react';
@@ -72,7 +72,7 @@ export default function HistoricalSidebar() {
 
   return (
     <aside
-      className="w-72 shrink-0 bg-white border-r border-slate-200 flex flex-col py-4 z-20 overflow-y-auto"
+      className="w-90 shrink-0 bg-white border-r border-slate-200 flex flex-col py-4 z-20 overflow-y-auto"
       aria-label="Historical query"
     >
       <p className="px-4 mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400 flex items-center gap-1.5">

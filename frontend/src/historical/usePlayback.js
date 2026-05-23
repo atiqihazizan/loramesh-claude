@@ -1,4 +1,4 @@
-// E4-c — playback track + summary for a device over a date range.
+// Playback track + summary for a device over a date range.
 // GET /playback/:id?from=&to=&resolution=auto  → track points
 // GET /playback/:id/summary?from=&to=          → distance/speed/duration
 

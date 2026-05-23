@@ -1,4 +1,4 @@
-// E4-b — historical context: shares the query selection between the
+// Historical context: shares the query selection between the
 // sidebar (form) and the page (content). Provided by HistoricalLayout.
 
 import { createContext, useContext, useState, useMemo } from 'react';

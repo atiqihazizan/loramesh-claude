@@ -1,4 +1,4 @@
-// E4-b2 — playback date bounds for a device.
+// Playback date bounds for a device.
 // GET /playback/:deviceId/bounds → { earliest, latest, total_points }
 // Used to constrain the historical range calendar.
 

@@ -1,5 +1,5 @@
-// E4-a — historical area layout (TopBar + historical sidebar + outlet)
-// E4-b — wrapped in HistoricalProvider to share query selection.
+// Historical area layout (TopBar + historical sidebar + outlet).
+// Wrapped in HistoricalProvider to share query selection.
 
 import { Outlet } from 'react-router-dom';
 import TopBar from './TopBar.jsx';

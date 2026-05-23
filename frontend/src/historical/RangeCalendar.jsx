@@ -1,4 +1,4 @@
-// E4-b2 — range calendar for historical query.
+// Range calendar for historical query.
 // Pick 2 dates → from/to range. Pick 1 date → single day.
 // Days outside [minDate, maxDate] are disabled.
 

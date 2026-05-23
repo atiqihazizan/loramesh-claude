@@ -1,4 +1,4 @@
-// E4-c — Route tab: historical track map + summary panel.
+// Route tab: historical track map + summary panel.
 
 import { errMsg } from '../lib/api.js';
 import HistoricalMap from './HistoricalMap.jsx';
