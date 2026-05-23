@@ -23,10 +23,17 @@ import AppLogo from '../components/ui/AppLogo.jsx';
 import AgencyPicker from './AgencyPicker.jsx';
 import BasemapSwitcher from './BasemapSwitcher.jsx';
 
+function agencyDisplayLabel(agency) {
+  if (!agency?.name) return null;
+  if (agency.code) return `${agency.name} (${agency.code})`;
+  return agency.name;
+}
+
 export default function MapTopOverlay() {
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
+  const isSuperadmin = useAuthStore((s) => s.isSuperadmin());
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
 
@@ -55,6 +62,21 @@ export default function MapTopOverlay() {
       >
         <AppLogo className="h-7 w-auto max-h-7 object-contain" />
         <span className="font-semibold text-slate-800 hidden sm:inline">LoRa Mesh</span>
+        {/* E3-g — read-only agency label for non-superadmin (superadmin uses AgencyPicker) */}
+        {!isSuperadmin && user?.agency ? (
+          <>
+            <span
+              className="hidden sm:inline h-4 w-px bg-slate-200 shrink-0"
+              aria-hidden
+            />
+            <span
+              className="text-xs text-slate-500 hidden sm:inline max-w-[11rem] truncate"
+              title={agencyDisplayLabel(user.agency)}
+            >
+              {agencyDisplayLabel(user.agency)}
+            </span>
+          </>
+        ) : null}
       </div>
 
       {/* Kepingan kanan — KAD GABUNGAN: agency | basemap | profil */}
