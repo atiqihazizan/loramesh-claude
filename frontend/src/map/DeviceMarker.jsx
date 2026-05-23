@@ -52,6 +52,7 @@ export default function DeviceMarker({ device, isSelected, onClick }) {
       longitude={device.longitude}
       latitude={device.latitude}
       anchor="bottom"
+      style={{ zIndex: isSelected ? 1000 : 1 }}
       onClick={(e) => {
         e.originalEvent.stopPropagation();
         onClick(device);

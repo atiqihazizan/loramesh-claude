@@ -8,7 +8,7 @@
 //   - header : titik warna + nama + bilangan + toggle mata
 //              (sembunyi/papar marker — hiddenTypeCodes/toggleTypeCode)
 //   - bawah  : senarai nama node. Tekan node → peta terbang ke
-//              marker (zoom 15) + pilih device + tutup panel.
+//              marker (zoom 19) + pilih device + tutup panel.
 //
 // flyTo + setSelectedDeviceId datang dari MapContext.
 // ----------------------------------------------------------------
@@ -78,7 +78,7 @@ export default function TypeFilter() {
     if (typeof d.latitude !== 'number' || typeof d.longitude !== 'number') {
       return;
     }
-    flyTo(d.longitude, d.latitude, 15);
+    flyTo(d.longitude, d.latitude, 19);
     setSelectedDeviceId(d.device_id);
     setOpen(false);
   };

@@ -20,7 +20,7 @@ import { deviceStatusLabel } from '../lib/deviceStatus.js';
 // ── FLAG ──────────────────────────────────────────────────────
 // true  = popup minimize kekal terbuka untuk setiap marker
 // false = tiada popup; klik marker terus buka panel detail
-export const KEEP_POPUP_OPEN = true;
+export const KEEP_POPUP_OPEN = false;
 // ──────────────────────────────────────────────────────────────
 
 function num(v, digits) {

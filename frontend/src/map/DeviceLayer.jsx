@@ -20,7 +20,7 @@
 // dalam <div> — guna Fragment dengan key.
 // ----------------------------------------------------------------
 
-import { Fragment, useCallback } from 'react';
+import { Fragment, useCallback, useMemo } from 'react';
 import { useDevices } from '../hooks/useDevices.js';
 import { useMapContext } from './MapContext.jsx';
 import DeviceMarker from './DeviceMarker.jsx';
@@ -45,10 +45,17 @@ export default function DeviceLayer() {
     [setSelectedDeviceId],
   );
 
-  // Device yang lulus penapis type.
-  const visibleDevices = devices.filter(
-    (d) => !hiddenTypeCodes.has(typeCodeOf(d)),
-  );
+  // Device yang lulus penapis type; yang dipilih di-render last (atas stack).
+  const visibleDevices = useMemo(() => {
+    const list = devices.filter(
+      (d) => !hiddenTypeCodes.has(typeCodeOf(d)),
+    );
+    if (selectedDeviceId == null) return list;
+    const idx = list.findIndex((d) => d.device_id === selectedDeviceId);
+    if (idx < 0) return list;
+    const selected = list[idx];
+    return [...list.slice(0, idx), ...list.slice(idx + 1), selected];
+  }, [devices, hiddenTypeCodes, selectedDeviceId]);
 
   return (
     <>

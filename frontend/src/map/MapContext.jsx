@@ -60,7 +60,7 @@ export function MapProvider({ children }) {
   // dalam <Map> dengar nonce dan laksanakan map.flyTo().
   const [flyToTarget, setFlyToTarget] = useState(null);
 
-  const flyTo = useCallback((lng, lat, zoom = 15) => {
+  const flyTo = useCallback((lng, lat, zoom = 19) => {
     setFlyToTarget({ lng, lat, zoom, nonce: Date.now() });
   }, []);
 
