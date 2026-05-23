@@ -1,4 +1,5 @@
 // E3-a — settings sidebar: app exit links + settings sub-nav (role-gated)
+// E5-a — added superadmin master-data links (Device Types, Sensors)
 
 import { NavLink } from 'react-router-dom';
 import {
@@ -8,6 +9,8 @@ import {
   History,
   Map,
   MapPinned,
+  Activity,
+  Boxes,
   UserCircle,
   Users,
 } from 'lucide-react';
@@ -29,10 +32,11 @@ const settingsLinkClass = ({ isActive }) =>
 
 export default function SettingsSidebar() {
   const isAgencyAdmin = useAuthStore((s) => s.isAgencyAdmin());
+  const isSuperadmin = useAuthStore((s) => s.isSuperadmin());
 
   return (
     <aside
-      className="w-52 shrink-0 bg-white border-r border-slate-200 flex flex-col py-4 z-20"
+      className="w-52 shrink-0 bg-white border-r border-slate-200 flex flex-col py-4 z-20 overflow-y-auto"
       aria-label="Settings navigation"
     >
       <p className="px-4 mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400 flex items-center gap-1.5">
@@ -77,6 +81,23 @@ export default function SettingsSidebar() {
         <UserCircle size={18} className="shrink-0" />
         <span className="text-sm font-medium">My Account</span>
       </NavLink>
+
+      {isSuperadmin ? (
+        <>
+          <hr className="my-4 mx-4 border-slate-200" />
+          <p className="px-4 mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
+            Master data
+          </p>
+          <NavLink to="/settings/device-types" className={settingsLinkClass}>
+            <Boxes size={18} className="shrink-0" />
+            <span className="text-sm font-medium">Device Types</span>
+          </NavLink>
+          <NavLink to="/settings/sensors" className={settingsLinkClass}>
+            <Activity size={18} className="shrink-0" />
+            <span className="text-sm font-medium">Sensors</span>
+          </NavLink>
+        </>
+      ) : null}
     </aside>
   );
 }
