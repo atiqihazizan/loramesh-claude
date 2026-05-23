@@ -1,32 +1,15 @@
 // Historical page: Route / Sensor tabs.
 // Route tab: track map + summary. Sensor tab: placeholder.
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Route, Activity } from 'lucide-react';
 import { useHistoricalContext } from './HistoricalContext.jsx';
 import { usePlayback } from './usePlayback.js';
 import RouteTab from './RouteTab.jsx';
 
-export default function HistoricalPage() {
-  const { query } = useHistoricalContext();
-  const [tab, setTab] = useState('route');
+function HistoricalPageContent({ query }) {
+  const [tab, setTab] = useState(() => (query.isStatic ? 'sensor' : 'route'));
   const playback = usePlayback(query);
-
-  // Static devices have no route — default to the Sensor tab.
-  useEffect(() => {
-    if (query?.isStatic) setTab('sensor');
-    else setTab('route');
-  }, [query?.deviceId, query?.isStatic]);
-
-  if (!query) {
-    return (
-      <div className="h-full flex items-center justify-center">
-        <p className="text-slate-500 text-sm">
-          Select an agency, device, and date range, then click View.
-        </p>
-      </div>
-    );
-  }
 
   const tabClass = (active) =>
     'flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ' +
@@ -86,5 +69,26 @@ export default function HistoricalPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function HistoricalPage() {
+  const { query } = useHistoricalContext();
+
+  if (!query) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <p className="text-slate-500 text-sm">
+          Select an agency, device, and date range, then click View.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <HistoricalPageContent
+      key={`${query.deviceId}:${query.isStatic}`}
+      query={query}
+    />
   );
 }

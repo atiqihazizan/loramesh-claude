@@ -1,7 +1,7 @@
 // Historical route map. Own MapLibre instance (no live socket).
 // Draws the track as a GeoJSON line + start/end markers.
 
-import { useMemo, useEffect, useRef } from 'react';
+import { useMemo, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Map, { Source, Layer, Marker, useMap } from 'react-map-gl/maplibre';
 import 'maplibre-gl/dist/maplibre-gl.css';
