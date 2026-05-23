@@ -57,7 +57,7 @@ export default function MapTopOverlay() {
       {/* Kepingan kiri — logo + nama produk */}
       <div
         className="absolute left-3 top-3 z-20 flex items-center gap-2.5
-                   rounded-xl bg-white/95 px-3 py-2 shadow-lg
+                   rounded-xl bg-white/95 px-3 py-3 shadow-lg
                    ring-1 ring-slate-200 backdrop-blur"
       >
         <AppLogo className="h-7 w-auto max-h-7 object-contain" />
@@ -66,11 +66,11 @@ export default function MapTopOverlay() {
         {!isSuperadmin && user?.agency ? (
           <>
             <span
-              className="hidden sm:inline h-4 w-px bg-slate-200 shrink-0"
+              className="h-4 w-px bg-slate-200 shrink-0"
               aria-hidden
             />
             <span
-              className="text-xs text-slate-500 hidden sm:inline max-w-[11rem] truncate"
+              className="text-xs text-slate-500 max-w-[11rem] truncate"
               title={agencyDisplayLabel(user.agency)}
             >
               {agencyDisplayLabel(user.agency)}
