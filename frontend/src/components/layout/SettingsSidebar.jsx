@@ -1,5 +1,6 @@
 // E3-a — settings sidebar: settings sub-nav (role-gated)
 // E5-a — added superadmin master-data links (Sensors, Device Types)
+// E6-responsive — onNavigate: tutup drawer mobile bila pilih item
 
 import { NavLink } from 'react-router-dom';
 import {
@@ -20,13 +21,13 @@ const settingsLinkClass = ({ isActive }) =>
       : 'text-slate-600 hover:bg-slate-100'
   }`;
 
-export default function SettingsSidebar() {
+export default function SettingsSidebar({ onNavigate }) {
   const isAgencyAdmin = useAuthStore((s) => s.isAgencyAdmin());
   const isSuperadmin = useAuthStore((s) => s.isSuperadmin());
 
   return (
     <aside
-      className="w-52 shrink-0 bg-white border-r border-slate-200 flex flex-col py-4 z-20 overflow-y-auto"
+      className="w-52 h-full shrink-0 bg-white border-r border-slate-200 flex flex-col py-4 overflow-y-auto"
       aria-label="Settings navigation"
     >
       <p className="px-4 mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
@@ -34,25 +35,25 @@ export default function SettingsSidebar() {
       </p>
       {isAgencyAdmin ? (
         <>
-          <NavLink to="/settings/agency" className={settingsLinkClass}>
+          <NavLink to="/settings/agency" onClick={onNavigate} className={settingsLinkClass}>
             <Building2 size={18} className="shrink-0" />
             <span className="text-sm font-medium">Agency Settings</span>
           </NavLink>
-          <NavLink to="/settings/devices" className={settingsLinkClass}>
+          <NavLink to="/settings/devices" onClick={onNavigate} className={settingsLinkClass}>
             <Cpu size={18} className="shrink-0" />
             <span className="text-sm font-medium">Devices</span>
           </NavLink>
-          <NavLink to="/settings/sites" className={settingsLinkClass}>
+          <NavLink to="/settings/sites" onClick={onNavigate} className={settingsLinkClass}>
             <MapPinned size={18} className="shrink-0" />
             <span className="text-sm font-medium">Sites</span>
           </NavLink>
-          <NavLink to="/settings/users" className={settingsLinkClass}>
+          <NavLink to="/settings/users" onClick={onNavigate} className={settingsLinkClass}>
             <Users size={18} className="shrink-0" />
             <span className="text-sm font-medium">Users</span>
           </NavLink>
         </>
       ) : null}
-      <NavLink to="/settings/account" className={settingsLinkClass}>
+      <NavLink to="/settings/account" onClick={onNavigate} className={settingsLinkClass}>
         <UserCircle size={18} className="shrink-0" />
         <span className="text-sm font-medium">My Account</span>
       </NavLink>
@@ -63,15 +64,15 @@ export default function SettingsSidebar() {
           <p className="px-4 mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
             Master data
           </p>
-          <NavLink to="/settings/agencies" className={settingsLinkClass}>
+          <NavLink to="/settings/agencies" onClick={onNavigate} className={settingsLinkClass}>
             <Building2 size={18} className="shrink-0" />
             <span className="text-sm font-medium">Agencies</span>
           </NavLink>
-          <NavLink to="/settings/sensors" className={settingsLinkClass}>
+          <NavLink to="/settings/sensors" onClick={onNavigate} className={settingsLinkClass}>
             <Gauge size={18} className="shrink-0" />
             <span className="text-sm font-medium">Sensors</span>
           </NavLink>
-          <NavLink to="/settings/device-types" className={settingsLinkClass}>
+          <NavLink to="/settings/device-types" onClick={onNavigate} className={settingsLinkClass}>
             <Shapes size={18} className="shrink-0" />
             <span className="text-sm font-medium">Device Types</span>
           </NavLink>

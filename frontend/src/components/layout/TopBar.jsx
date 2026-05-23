@@ -11,6 +11,7 @@ import {
   Map,
   History,
   Settings,
+  Menu,
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore.js';
 import AppLogo from '../ui/AppLogo.jsx';
@@ -21,7 +22,7 @@ const navItems = [
   { to: '/settings', icon: Settings, label: 'Settings' },
 ];
 
-export default function TopBar() {
+export default function TopBar({ onMenuClick }) {
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
@@ -48,8 +49,19 @@ export default function TopBar() {
   return (
     <header className="h-14 bg-white border-b border-slate-200 flex items-center
                        justify-between px-4 z-30">
-      {/* Kiri — logo + nama */}
+      {/* Kiri — hamburger (mobile) + logo + nama */}
       <div className="flex items-center gap-2.5">
+        {onMenuClick && (
+          <button
+            type="button"
+            onClick={onMenuClick}
+            aria-label="Buka menu"
+            className="md:hidden -ml-1 flex h-9 w-9 items-center justify-center
+                       rounded-lg text-slate-600 transition-colors hover:bg-slate-100"
+          >
+            <Menu size={20} />
+          </button>
+        )}
         <AppLogo className="h-8 w-auto max-h-8 object-contain" />
         <span className="font-semibold text-slate-800 hidden sm:inline">LoRa Mesh</span>
       </div>

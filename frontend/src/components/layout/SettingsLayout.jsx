@@ -1,9 +1,12 @@
 // E3-a — settings area layout (TopBar + settings sidebar + outlet)
 // E5-a — added superadmin master-data route guard
+// E6-responsive — sidebar jadi drawer pada mobile
 
+import { useState } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import TopBar from './TopBar.jsx';
 import SettingsSidebar from './SettingsSidebar.jsx';
+import ResponsiveDrawer from './ResponsiveDrawer.jsx';
 import { useAuthStore } from '../../store/authStore.js';
 
 function SettingsRoleGuard() {
@@ -33,11 +36,16 @@ function SettingsRoleGuard() {
 }
 
 export default function SettingsLayout() {
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const closeDrawer = () => setDrawerOpen(false);
+
   return (
     <div className="h-full flex flex-col">
-      <TopBar />
+      <TopBar onMenuClick={() => setDrawerOpen(true)} />
       <div className="flex-1 flex overflow-hidden">
-        <SettingsSidebar />
+        <ResponsiveDrawer open={drawerOpen} onClose={closeDrawer}>
+          <SettingsSidebar onNavigate={closeDrawer} />
+        </ResponsiveDrawer>
         <main className="flex-1 relative overflow-hidden bg-slate-50">
           <SettingsRoleGuard />
         </main>
