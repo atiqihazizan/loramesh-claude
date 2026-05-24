@@ -14,6 +14,7 @@ import playbackRoutes    from './playback.js';
 import tilesRoutes       from './tiles.js';
 import configRoutes      from './config.js';
 import notificationsRoutes from './notifications.js';
+import devicesUserRoutes from './devices-user.js';
 
 const router = express.Router();
 
@@ -31,5 +32,6 @@ router.use('/playback',     playbackRoutes);
 router.use('/tiles',        tilesRoutes);
 router.use('/config',       configRoutes);
 router.use('/notifications', notificationsRoutes);
+router.use('/devices-user', devicesUserRoutes);
 
 export default router;
