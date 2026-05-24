@@ -13,7 +13,7 @@ function agencyQueryParams(agencyId, isSuperadmin) {
 }
 
 async function fetchDevices(agencyId, isSuperadmin, search) {
-  const params = { ...agencyQueryParams(agencyId, isSuperadmin) };
+  const params = { ...agencyQueryParams(agencyId, isSuperadmin), approval: 'all' };
   if (search?.trim()) params.search = search.trim();
   const res = await api.get('/devices', { params });
   return res.data?.devices ?? [];
@@ -69,6 +69,14 @@ export function useAgencyDevices(agencyId, search = '') {
     onSuccess: invalidate,
   });
 
+  const approveDeviceMutation = useMutation({
+    mutationFn: async (id) => {
+      const res = await api.patch(`/devices/${id}/approve`);
+      return res.data?.device;
+    },
+    onSuccess: invalidate,
+  });
+
   return {
     devices: query.data ?? [],
     isLoading: query.isLoading,
@@ -77,8 +85,10 @@ export function useAgencyDevices(agencyId, search = '') {
     createDevice: createDevice.mutateAsync,
     updateDevice: updateDevice.mutateAsync,
     removeDevice: removeDevice.mutateAsync,
+    approveDevice: approveDeviceMutation.mutateAsync,
     isCreating: createDevice.isPending,
     isUpdating: updateDevice.isPending,
     isRemoving: removeDevice.isPending,
+    isApproving: approveDeviceMutation.isPending,
   };
 }

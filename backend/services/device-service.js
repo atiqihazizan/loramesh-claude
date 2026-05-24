@@ -32,7 +32,7 @@ async function refreshDeviceCaches() {
  * List devices. ADMIN_AGENCY → only their agency. SUPERADMIN → all (or filter
  * by ?agency_id).
  */
-export async function listDevices({ user, agencyIdFilter, search }) {
+export async function listDevices({ user, agencyIdFilter, search, approval = 'approved' }) {
   const isSuper = user.level.code === ROLES.SUPERADMIN;
 
   // Resolve which agency scope
@@ -59,6 +59,11 @@ export async function listDevices({ user, agencyIdFilter, search }) {
   if (agencyId) {
     where.device_agencies = { some: { agency_id: agencyId, active: true } };
   }
+  if (approval === 'approved') {
+    where.need_approval = false;
+  } else if (approval === 'pending') {
+    where.need_approval = true;
+  }
 
   const devices = await prisma.devices.findMany({
     where,
@@ -84,6 +89,8 @@ export async function listDevices({ user, agencyIdFilter, search }) {
     latitude: d.latitude,
     longitude: d.longitude,
     last_seen_at: d.last_seen_at,
+    need_approval: d.need_approval,
+    date_approved: d.date_approved,
     agencies: d.device_agencies.map((da) => da.agency),
     created_at: d.created_at,
   }));
@@ -132,9 +139,58 @@ export async function getDeviceById(id, user) {
     latitude: d.latitude,
     longitude: d.longitude,
     last_seen_at: d.last_seen_at,
+    need_approval: d.need_approval,
+    date_approved: d.date_approved,
     agencies: d.device_agencies.map((da) => da.agency),
     created_at: d.created_at,
     updated_at: d.updated_at,
+  };
+}
+
+/**
+ * Approve a self-registered (pending) device.
+ * ADMIN_AGENCY → only devices in their agency. SUPERADMIN → any.
+ * Idempotent: approving an already-approved device is a no-op.
+ */
+export async function approveDevice(id, user) {
+  const d = await prisma.devices.findUnique({
+    where: { id },
+    include: {
+      device_agencies: {
+        where: { active: true },
+        include: { agency: { select: { id: true, code: true, name: true } } },
+      },
+    },
+  });
+  if (!d) {
+    const err = new Error('Device not found');
+    err.status = 404;
+    throw err;
+  }
+
+  if (user.level.code !== ROLES.SUPERADMIN) {
+    const inAgency = d.device_agencies.some((da) => da.agency.id === user.agency?.id);
+    if (!inAgency) {
+      const err = new Error('Forbidden — device not in your agency');
+      err.status = 403;
+      throw err;
+    }
+  }
+
+  if (!d.need_approval) {
+    return { id: d.id, device_id: d.device_id, need_approval: false, date_approved: d.date_approved };
+  }
+
+  const updated = await prisma.devices.update({
+    where: { id },
+    data: { need_approval: false, date_approved: new Date() },
+  });
+
+  return {
+    id: updated.id,
+    device_id: updated.device_id,
+    need_approval: updated.need_approval,
+    date_approved: updated.date_approved,
   };
 }
 
@@ -201,6 +257,7 @@ export async function createDevice(payload, user) {
         longitude: longitude ?? null,
         is_static: is_static ?? false,
         logging_enabled: logging_enabled ?? true,
+        need_approval: false,
         status: 'offline',
       },
     });

@@ -7,6 +7,7 @@ import { validateId, validateDeviceCreate } from '../middleware/validation.js';
 import {
   listDevices,
   getDeviceById,
+  approveDevice,
   createDevice,
   updateDevice,
   removeDevice,
@@ -23,6 +24,7 @@ router.get('/', authenticateJwt, async (req, res, next) => {
       user: req.user,
       agencyIdFilter: req.query.agency_id ? parseInt(req.query.agency_id, 10) : null,
       search: req.query.search,
+      approval: req.query.approval || 'approved',
     });
     return res.json({ devices });
   } catch (err) {
@@ -61,6 +63,17 @@ router.post(
 router.patch('/:id', authenticateJwt, requireAgencyAdmin, validateId, async (req, res, next) => {
   try {
     const device = await updateDevice(parseInt(req.params.id, 10), req.body, req.user);
+    return res.json({ device });
+  } catch (err) {
+    if (err.status) return res.status(err.status).json({ error: err.message });
+    return next(err);
+  }
+});
+
+// Approve a pending (self-registered) device. ADMIN_AGENCY+ only.
+router.patch('/:id/approve', authenticateJwt, requireAgencyAdmin, validateId, async (req, res, next) => {
+  try {
+    const device = await approveDevice(parseInt(req.params.id, 10), req.user);
     return res.json({ device });
   } catch (err) {
     if (err.status) return res.status(err.status).json({ error: err.message });

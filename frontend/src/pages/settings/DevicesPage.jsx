@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { Check, Pencil, Plus, Trash2 } from 'lucide-react';
 import { errMsg } from '../../lib/api.js';
 import { useAuthStore } from '../../store/authStore.js';
 import { useAgencies } from '../../hooks/useAgencies.js';
@@ -32,9 +32,11 @@ export default function DevicesPage() {
     createDevice,
     updateDevice,
     removeDevice,
+    approveDevice,
     isCreating,
     isUpdating,
     isRemoving,
+    isApproving,
   } = useAgencyDevices(agencyTargetId, search);
 
   const adminReady = !isSuperadmin || agencyTargetId != null;
@@ -60,6 +62,16 @@ export default function DevicesPage() {
       key: 'is_static',
       label: 'Static',
       render: (row) => (row.is_static ? 'Yes' : 'No'),
+    },
+    {
+      key: 'approval',
+      label: 'Approval',
+      render: (row) =>
+        row.need_approval ? (
+          <span className="text-amber-600 font-medium">Pending</span>
+        ) : (
+          <span className="text-slate-500">Approved</span>
+        ),
     },
     { key: 'status', label: 'Status' },
   ];
@@ -126,6 +138,24 @@ export default function DevicesPage() {
               emptyMessage="No devices found"
               renderActions={(row) => (
                 <>
+                  {row.need_approval ? (
+                    <button
+                      type="button"
+                      title="Approve"
+                      className="btn-ghost p-2 text-green-600 hover:bg-green-50"
+                      disabled={isApproving}
+                      onClick={async () => {
+                        setActionError(null);
+                        try {
+                          await approveDevice(row.id);
+                        } catch (err) {
+                          setActionError(err);
+                        }
+                      }}
+                    >
+                      <Check size={16} />
+                    </button>
+                  ) : null}
                   <button
                     type="button"
                     title="Edit"

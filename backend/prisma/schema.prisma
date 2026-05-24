@@ -164,6 +164,10 @@ model devices {
   // v3: renamed from `need_log` for clarity
   logging_enabled Boolean @default(true)
 
+  // device approval — true selepas device daftar sendiri (QR), false bila admin sahkan
+  need_approval Boolean   @default(false)
+  date_approved DateTime? @db.Timestamp(0)
+
   // v3: removed `curr_agency` — derive from device_agency where active=true
 
   // v3: new — last time this device sent any data (used for historical sort)
@@ -191,6 +195,7 @@ model devices {
   @@index([status],          map: "idx_devices_status")
   @@index([is_static],       map: "idx_devices_is_static")
   @@index([logging_enabled], map: "idx_devices_logging")
+  @@index([need_approval],   map: "idx_devices_need_approval")
   @@index([device_mac],      map: "idx_devices_device_mac")
   @@index([last_seen_at],    map: "idx_devices_last_seen")    // v3: new
 }
