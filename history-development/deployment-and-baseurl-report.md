@@ -183,6 +183,89 @@ Selepas edit: `nginx -t` → `systemctl reload nginx`.
 | `MQTT_WSS_PORT` | **8887** |
 | `CORS_ORIGIN` | `https://lora2u.com`, `https://www.lora2u.com`, `http://localhost:5173` |
 
+### 4.5 Schema & DB (Prisma) di cloud
+
+DB production **`lora_mesh_pro`** wujud **sebelum** sejarah migration Prisma penuh — ada **drift**. Jangan guna `npx prisma migrate dev` on server. Corak rasmi repo (sama E5-c): **`db push`** → **`migrate resolve`** → **`generate`** → restart PM2.
+
+**Lokasi:** jalankan dari `/var/www/loramesh/mesh_v2/backend` (atau `backend/` selepas `git pull`). Pastikan `DATABASE_URL` dalam `.env` production betul (MySQL `127.0.0.1`).
+
+**Prisma CLI:** package `prisma` dalam `devDependencies`. Kalau deploy guna `npm ci --omit=dev`, CLI tiada — either `npm ci` penuh sekali untuk migrate, atau jalankan Prisma dari mesin dev dengan `DATABASE_URL` via SSH tunnel (jangan expose MySQL ke internet).
+
+#### Aliran bila ada migration baru dalam repo
+
+Setiap perubahan schema ada folder di `backend/prisma/migrations/<nama>/migration.sql` (contoh: `e5c_provisioning_token`, `drop_device_data_type`).
+
+1. **Sandaran** (wajib jika `DROP COLUMN` / data loss):
+   ```bash
+   mkdir -p /var/www/loramesh/backup/$(date +%Y-%m-%d)
+   mysqldump -uUSER -p lora_mesh_pro devices > /var/www/loramesh/backup/$(date +%Y-%m-%d)/devices_backup.sql
+   # atau full DB untuk migration besar:
+   # mysqldump -uUSER -p lora_mesh_pro > /var/www/loramesh/backup/$(date +%Y-%m-%d)/lora_mesh_pro_full.sql
+   ```
+
+2. **Kod & deps:**
+   ```bash
+   cd /var/www/loramesh/mesh_v2
+   git pull
+   cd backend
+   npm ci
+   ```
+
+3. **Apply schema ke MySQL** (selarikan dengan `schema.prisma`):
+   ```bash
+   npx prisma db push --accept-data-loss
+   ```
+   Guna `--accept-data-loss` hanya bila Prisma amaran column/table akan gugur. Alternatif: jalankan SQL manual:
+   ```bash
+   mysql -uUSER -p lora_mesh_pro < prisma/migrations/<nama_folder>/migration.sql
+   ```
+
+4. **Rekod migration dalam `_prisma_migrations`** (satu folder sekali):
+   ```bash
+   npx prisma migrate resolve --applied <nama_folder>
+   ```
+   Contoh: `npx prisma migrate resolve --applied drop_device_data_type`
+
+5. **Client + restart:**
+   ```bash
+   npx prisma generate
+   pm2 restart mesh_v2 --update-env
+   ```
+
+6. **Verify:**
+   ```bash
+   curl -s https://lora2u.com/api/health/ping
+   # optional: mysql -e "DESCRIBE devices;" lora_mesh_pro
+   ```
+
+#### Contoh ringkas — `drop_device_data_type` (`devices.data_type` dibuang)
+
+Commit: `a6d0ec1` — selepas `git pull`, dari `backend/`:
+
+```bash
+mysqldump -uUSER -p lora_mesh_pro devices > ../backup/devices_pre_drop_data_type.sql
+npx prisma db push --accept-data-loss
+npx prisma migrate resolve --applied drop_device_data_type
+npx prisma generate
+pm2 restart mesh_v2 --update-env
+```
+
+#### Perintah — bila guna apa
+
+| Perintah | Cloud (projek ini) |
+|----------|-------------------|
+| `migrate dev` | **Jangan** on production / DB drift |
+| `db push` (+ `--accept-data-loss` bila perlu) | **Ya** — jadikan DB ikut `schema.prisma` |
+| `migrate resolve --applied <folder>` | **Ya** — selepas push atau SQL manual |
+| `migrate deploy` | Hanya jika `_prisma_migrations` 100% selari folder migrations; kalau drift, boleh gagal |
+| `db:seed` / `npm run db:seed` | Jangan on prod kecuali sengaja |
+
+Skrip npm (`backend/package.json`): `npm run db:push`, `npm run db:generate`, `npm run db:migrate:deploy` — sama CLI di atas.
+
+**Deploy app vs deploy schema:** build frontend + sync `public/` **berasingan** dari langkah DB. Selepas schema berubah, **wajib** `prisma generate` + `pm2 restart mesh_v2` — kalau tidak, Prisma Client lama boleh crash (column tak wujud / mismatch).
+
+Rujukan drift E5-c: [`E5-c-provisioning-token-report.md`](./E5-c-provisioning-token-report.md), [`cursor-handoff-report.md`](./cursor-handoff-report.md).
+
 ---
 
 ## 5. Aliran trafik (ringkas)
@@ -212,9 +295,10 @@ flowchart LR
 
 ## 6. Checklist deploy semula
 
+- [ ] Jika **`schema.prisma` / folder `prisma/migrations/` berubah:** ikut **§4.5** (backup → `db push` → `migrate resolve` → `generate`) **sebelum atau selepas** pull, kemudian `pm2 restart mesh_v2`
 - [ ] `cd frontend && npm run build` → `backend/public/`
 - [ ] Sync ke `/var/www/loramesh/mesh_v2/` (sekurang-kurangnya `public/`)
-- [ ] `pm2 restart mesh_v2 --update-env` jika `.env` backend berubah
+- [ ] `pm2 restart mesh_v2 --update-env` jika `.env` backend berubah (atau selepas migrate schema)
 - [ ] Uji `https://lora2u.com/v2/` (200, asset `/v2/assets/...`)
 - [ ] Uji `https://lora2u.com/api/health/ping`
 - [ ] Uji login, peta, Socket.IO / tracking
@@ -258,9 +342,9 @@ flowchart LR
 ## 9. Indeks fail penting
 
 **Frontend:** `appBase.js`, `vite.config.js`, `src/lib/baseUrl.js`, `src/lib/api.js`, `src/lib/socket.js`, `src/App.jsx`  
-**Backend:** `server.js`, `config/env.js`, `config/cors.js`, `public/`  
-**Dokumen:** `cursor-handoff-report.md`, `E5-c-provisioning-token-report.md`
+**Backend:** `server.js`, `config/env.js`, `config/cors.js`, `public/`, `prisma/schema.prisma`, `prisma/migrations/*/migration.sql`, `prisma.config.ts`  
+**Dokumen:** `cursor-handoff-report.md`, `E5-c-provisioning-token-report.md`, **§4.5** (schema cloud)
 
 ---
 
-*Laporan ini melengkapkan handoff Cursor; kemas kini selepas perubahan nginx atau strategi base path.*
+*Laporan ini melengkapkan handoff Cursor; kemas kini selepas perubahan nginx, strategi base path, atau aliran migration DB cloud.*
