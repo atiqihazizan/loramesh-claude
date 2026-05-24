@@ -34,6 +34,7 @@ function pickActiveAgency(deviceAgencies) {
     id: link.agency.id,
     code: link.agency.code,
     name: link.agency.name,
+    agency_token: link.agency.agency_token,
   };
 }
 
@@ -47,7 +48,9 @@ export async function checkDevice(deviceId) {
       device_agencies: {
         where: { active: true },
         include: {
-          agency: { select: { id: true, code: true, name: true } },
+          agency: {
+            select: { id: true, code: true, name: true, agency_token: true },
+          },
         },
       },
     },
@@ -61,14 +64,18 @@ export async function checkDevice(deviceId) {
     where: { device_id: deviceId },
   });
 
+  const activeAgency = pickActiveAgency(device.device_agencies);
+
   return {
     exists: true,
     device: {
-      device_id: device.device_id,
+      deviceid: device.device_id,
       name: device.name,
       need_approval: device.need_approval,
       date_approved: device.date_approved,
-      agency: pickActiveAgency(device.device_agencies),
+      agency_id: activeAgency?.id ?? null,
+      agency_name: activeAgency?.name ?? null,
+      agency_token: activeAgency?.agency_token ?? null,
       last_known: mapLastKnown(live),
     },
   };
@@ -250,16 +257,17 @@ export async function registerDevice({ deviceId, name, agencyId: _bodyAgencyId }
   }
 
   return {
+    success: true,
     device: {
+      deviceid: deviceRow.device_id,
       device_id: deviceRow.device_id,
       name: deviceRow.name,
       need_approval: deviceRow.need_approval,
     },
-    agency: {
-      id: agencyRow.id,
-      code: agencyRow.code,
-      name: agencyRow.name,
-    },
+    agency_id: agencyRow.id,
+    agency_name: agencyRow.name,
+    agency_token: agency.token,
     is_new,
+    need_approval: deviceRow.need_approval,
   };
 }

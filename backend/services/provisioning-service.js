@@ -6,6 +6,7 @@
 import crypto from 'node:crypto';
 import prisma from '../lib/prisma.js';
 import { env } from '../config/env.js';
+import { refreshAgencyInCache } from '../lib/cache/agency-cache.js';
 
 // Generate a random agency token.
 function generateToken() {
@@ -48,6 +49,8 @@ export async function generateAgencyToken(agencyId) {
     data: { agency_token: token, agency_token_expires_at: expiresAt },
   });
 
+  await refreshAgencyInCache(agencyId);
+
   return {
     agency_token: updated.agency_token,
     agency_token_expires_at: updated.agency_token_expires_at,
@@ -69,6 +72,9 @@ export async function endAgencyToken(agencyId) {
     where: { id: agencyId },
     data: { agency_token_expires_at: new Date() },
   });
+
+  await refreshAgencyInCache(agencyId);
+
   return {
     agency_token_expires_at: updated.agency_token_expires_at,
   };
