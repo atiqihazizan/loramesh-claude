@@ -18,3 +18,17 @@ export function publicAsset(filename) {
 export function loginPath() {
   return publicAsset('login').replace(/\/{2,}/g, '/');
 }
+
+/** REST API base path — elak clash v1 `/api` vs v2 `/v2/api` pada domain sama. */
+export function apiBasePath() {
+  const trimmed = BASE_URL.replace(/\/+$/, '');
+  if (!trimmed) return '/api';
+  return `${trimmed}/api`.replace(/\/{2,}/g, '/');
+}
+
+/** Socket.IO path (bukan URL penuh) — selari dengan nginx `location /v2/socket.io/`. */
+export function socketIoPath() {
+  const trimmed = BASE_URL.replace(/\/+$/, '');
+  if (!trimmed) return '/socket.io';
+  return `${trimmed}/socket.io`.replace(/\/{2,}/g, '/');
+}

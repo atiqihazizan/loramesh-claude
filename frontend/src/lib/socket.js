@@ -11,14 +11,22 @@
 // ----------------------------------------------------------------
 
 import { io } from 'socket.io-client';
+import { socketIoPath } from './baseUrl.js';
 
-// Socket server URL — same origin as the API host (no /api path).
-const SOCKET_URL =
-  import.meta.env.VITE_SOCKET_URL != null && import.meta.env.VITE_SOCKET_URL !== ''
-    ? import.meta.env.VITE_SOCKET_URL.replace(/\/+$/, '')
-    : import.meta.env.PROD
-      ? undefined
-      : 'http://localhost:5002';
+function resolveSocketConfig() {
+  if (import.meta.env.VITE_SOCKET_URL != null && import.meta.env.VITE_SOCKET_URL !== '') {
+    return {
+      url: import.meta.env.VITE_SOCKET_URL.replace(/\/+$/, ''),
+      path: '/socket.io',
+    };
+  }
+  if (import.meta.env.PROD) {
+    return { url: undefined, path: socketIoPath() };
+  }
+  return { url: 'http://localhost:5002', path: '/socket.io' };
+}
+
+const SOCKET_CONFIG = resolveSocketConfig();
 
 let socket = null;
 
@@ -45,9 +53,10 @@ function readToken() {
 export function getSocket() {
   if (socket) return socket;
 
-  socket = io(SOCKET_URL, {
+  socket = io(SOCKET_CONFIG.url, {
     autoConnect: false,
     transports: ['websocket'],
+    path: SOCKET_CONFIG.path,
     auth: { token: readToken() },
   });
 

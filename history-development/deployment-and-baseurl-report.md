@@ -12,8 +12,8 @@ Dokumen ringkasan kerja repo **mesh_pro_claude** dan setup di server **mahsites*
 | Persekitaran | URL UI | API / Socket | Backend |
 |--------------|--------|--------------|---------|
 | **Dev (PC)** | `http://localhost:5173/v2/...` (ikut `VITE_APP_BASE`) | `http://localhost:5002/api` | Node port **5002** |
-| **Production** | `https://lora2u.com/v2/` | Same-origin `https://lora2u.com/api` | PM2 **`mesh_v2`** port **5002** |
-| **Legacy v1** | `https://lora2u.com/` | — | PM2 **`lora2u`** port **5001** |
+| **Production** | `https://lora2u.com/v2/` | Same-origin **`/v2/api`** (bukan `/api`) | PM2 **`mesh_v2`** port **5002** |
+| **Legacy v1** | `https://lora2u.com/` | **`/api`** → port **5001** | PM2 **`lora2u`** port **5001** |
 
 Legacy v1 kekal di root `/`; mesh v2 (repo claude) di **`/v2/`** supaya kedua-dua boleh hidup serentak.
 
@@ -152,24 +152,29 @@ Konfigurasi nginx **tidak** dalam repo; ia pada server.
 
 ### 4.2 Nginx — `/etc/nginx/sites-available/loramesh.conf`
 
+**Pisah API (wajib jika v1 + v2 serentak):** lihat [`nginx-v1-v2-api-split.md`](./nginx-v1-v2-api-split.md).
+
 | Location | Fungsi |
 |----------|--------|
 | `/v2` | Redirect 301 → `/v2/` |
 | `/v2/` | Static SPA — `alias` → `/var/www/loramesh/mesh_v2/public/` + SPA fallback |
-| `/assets/` (asset Vite) | Fail dari `mesh_v2/public` (build dengan `base: '/v2/'`) |
-| `/api/` | Proxy → `127.0.0.1:5002` |
-| `/socket.io/` | WebSocket → **5002** |
+| `/v2/api/` | Proxy → **5002** (`/api/` pada backend) |
+| `/v2/socket.io/` | WebSocket → **5002** |
+| `/api/` | Legacy v1 → **5001** |
+| `/socket.io/` | Legacy v1 → **5001** (jika UI guna same-origin; v1 lama mungkin guna `socketio.lora2u.com`) |
 | `/` | Legacy v1 → `127.0.0.1:5001` |
 | `/simulator` | Tiada perubahan (legacy) |
 
-Subdomain **`socketio.lora2u.com`** / **`websocket.lora2u.com`** → proxy ke **5002**.
+Jangan letak `location ^~ /api/` ke 5002 pada domain utama — itu clash dengan v1.
+
+Subdomain **`socketio.lora2u.com`** / **`websocket.lora2u.com`** → proxy ke **5002** (opsyen untuk v2 sahaja).
 
 Selepas edit: `nginx -t` → `systemctl reload nginx`.
 
 ### 4.3 Frontend di cloud
 
 1. Build dengan `VITE_APP_BASE=/v2/` (sama `.env.example`).
-2. Production: `VITE_API_URL` / `VITE_SOCKET_URL` kosong → browser guna `https://lora2u.com/api` dan Socket.IO same-origin.
+2. Production: `VITE_API_URL` / `VITE_SOCKET_URL` kosong → browser guna **`/v2/api`** dan Socket path **`/v2/socket.io`** (same-origin).
 3. Sync `backend/public/` (atau keseluruhan deploy tree) ke `/var/www/loramesh/mesh_v2/public/`.
 
 ### 4.4 Env production (MQTT & CORS) — `mesh_v2/.env`

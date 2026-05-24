@@ -2,22 +2,25 @@
 // Axios instance — auto sertakan JWT, auto handle 401.
 
 import axios from 'axios';
-import { loginPath } from './baseUrl.js';
+import { apiBasePath, loginPath } from './baseUrl.js';
 
 function originWithoutTrailingSlash(url) {
   if (url == null || url === '') return '';
   return String(url).replace(/\/+$/, '');
 }
 
-const API_ORIGIN =
-  import.meta.env.VITE_API_URL != null && import.meta.env.VITE_API_URL !== ''
-    ? originWithoutTrailingSlash(import.meta.env.VITE_API_URL)
-    : import.meta.env.PROD
-      ? ''
-      : 'http://localhost:5002';
+function resolveApiBaseURL() {
+  if (import.meta.env.VITE_API_URL != null && import.meta.env.VITE_API_URL !== '') {
+    return `${originWithoutTrailingSlash(import.meta.env.VITE_API_URL)}/api`;
+  }
+  if (import.meta.env.PROD) {
+    return apiBasePath();
+  }
+  return 'http://localhost:5002/api';
+}
 
 export const api = axios.create({
-  baseURL: `${API_ORIGIN}/api`,
+  baseURL: resolveApiBaseURL(),
   headers: { 'Content-Type': 'application/json' },
 });
 
