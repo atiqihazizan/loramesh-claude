@@ -27,6 +27,7 @@ import { useAuthStore } from '../store/authStore.js';
 import AppLogo from '../components/ui/AppLogo.jsx';
 import AgencyPicker from './AgencyPicker.jsx';
 import BasemapSwitcher from './BasemapSwitcher.jsx';
+import NotificationBell from '../components/layout/NotificationBell.jsx';
 
 function agencyDisplayLabel(agency) {
   if (!agency?.name) return null;
@@ -103,6 +104,8 @@ export default function MapTopOverlay() {
 
           {/* Butang basemap — buka dropdown sendiri */}
           <BasemapSwitcher />
+
+          <NotificationBell />
 
           {/* Pemisah nipis */}
           <div className="h-6 w-px bg-slate-200" />

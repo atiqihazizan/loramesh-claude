@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore.js';
 import AppLogo from '../ui/AppLogo.jsx';
+import NotificationBell from './NotificationBell.jsx';
 
 const navItems = [
   { to: '/', icon: Map, label: 'Map', end: true },
@@ -73,6 +74,8 @@ export default function TopBar({ onMenuClick }) {
             {user.agency.name}
           </span>
         )}
+
+        <NotificationBell />
 
         <div className="relative" ref={menuRef}>
           <button

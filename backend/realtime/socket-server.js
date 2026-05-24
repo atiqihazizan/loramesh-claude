@@ -75,6 +75,9 @@ export function initSocketServer(httpServer) {
       console.log(`[socket]   joined room agency:${user.agency.id}`);
     }
 
+    // Personal room — for direct notifications to this user
+    socket.join(`user:${user.id}`);
+
     // SUPERADMIN boleh join semua agency (kalau perlu) — handled dalam handlers
 
     registerSocketHandlers(io, socket);
