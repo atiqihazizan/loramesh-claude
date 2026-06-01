@@ -15,6 +15,7 @@ import tilesRoutes       from './tiles.js';
 import configRoutes      from './config.js';
 import notificationsRoutes from './notifications.js';
 import devicesUserRoutes from './devices-user.js';
+import provisionRoutes from './provision.js';
 
 const router = express.Router();
 
@@ -33,5 +34,6 @@ router.use('/tiles',        tilesRoutes);
 router.use('/config',       configRoutes);
 router.use('/notifications', notificationsRoutes);
 router.use('/devices-user', devicesUserRoutes);
+router.use('/provision',    provisionRoutes);
 
 export default router;
