@@ -49,34 +49,16 @@ function partitionName(date) {
  * TO_DAYS untuk hari PERTAMA bulan SELEPAS date.
  * Partition "VALUES LESS THAN" guna nilai ni.
  */
+/**
+ * UNIX_TIMESTAMP untuk hari PERTAMA bulan SELEPAS date.
+ * Partition "VALUES LESS THAN" guna nilai ni.
+ */
 function partitionBoundary(date) {
   const y = date.getFullYear();
   const m = date.getMonth(); // 0-indexed
-  // Hari pertama bulan seterusnya
-  const next = new Date(y, m + 1, 1);
-  return toDays(next);
-}
-
-/** Tiru fungsi MySQL TO_DAYS — hari sejak tahun 0. */
-function toDays(date) {
-  // MySQL TO_DAYS('0000-01-01') = 1; guna formula yang sama
-  const y = date.getFullYear();
-  const m = date.getMonth() + 1;
-  const d = date.getDate();
-  // Algoritma standard hari Julian-ish yang MySQL guna
-  let a = Math.floor((14 - m) / 12);
-  let yy = y + 4800 - a;
-  let mm = m + 12 * a - 3;
-  const jdn =
-    d +
-    Math.floor((153 * mm + 2) / 5) +
-    365 * yy +
-    Math.floor(yy / 4) -
-    Math.floor(yy / 100) +
-    Math.floor(yy / 400) -
-    32045;
-  // Offset supaya padan dengan TO_DAYS MySQL
-  return jdn - 1721060;
+  // Hari pertama bulan seterusnya, UTC, dalam saat (UNIX timestamp)
+  const next = Date.UTC(y, m + 1, 1) / 1000;
+  return Math.floor(next);
 }
 
 // =====================================================================
@@ -116,7 +98,7 @@ CREATE TABLE IF NOT EXISTS \`${tableName}\` (
   PRIMARY KEY (id, received_at),
   INDEX idx_send_dt (send_dt)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-PARTITION BY RANGE (TO_DAYS(received_at)) (
+PARTITION BY RANGE (UNIX_TIMESTAMP(received_at)) (
   PARTITION ${pThis} VALUES LESS THAN (${bThis}),
   PARTITION ${pNext} VALUES LESS THAN (${bNext}),
   PARTITION pMAX VALUES LESS THAN MAXVALUE

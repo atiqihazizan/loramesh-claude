@@ -18,7 +18,7 @@
 ### Backend (`backend/`)
 | Fail | Tugas |
 |---|---|
-| `config/env.js` | Single source env. **MQTT produksi sebenar (dari .env.example): HOST=`178.128.48.114`, ws=`8885`, wss=`8887`.** Default `mahsites.net` cuma fallback. |
+| `config/env.js` | Single source env. **MQTT cloud SEBENAR (disahkan dari .env cloud 2026-06-02): `wss://mahsites.net:8887/ws`, user=`wsmqtt`, pass=`w5mqtt`.** |
 | `config/constants.js` | `MQTT_TOPICS`, `SOCKET_EVENTS`, `DATA_SOURCE` |
 | `realtime/mqtt-client.js` | Connect broker, subscribe topic, route ke handler |
 | `realtime/mqtt-handlers.js` | Parse topic → `processTracking()`. Topic kind: bundle/status/backfill/gateway |
@@ -111,8 +111,9 @@ Publish payload dengan `node_id` (= device_id), TANPA token:
   "longitude": "...", "speed": "...", "sensor_data": [...] }
 ```
 - Topik publish: `LoRa/tracking/{device_id}/bundle` (masuk kind `bundle`)
-- Broker (SAMA untuk backend v3 & Flutter): `178.128.48.114` — ws `8885`, wss `8887`. Flutter guna `wss://178.128.48.114:8887/mqtt`, auth `wsmqtt`/`w5mqtt24.`
-- Backend v3 `MQTT_ENABLED=true`, subscribe broker yang sama.
+- Broker SEBENAR (disahkan .env cloud, SAMA untuk backend & Flutter): **`wss://mahsites.net:8887/ws`**, user=`wsmqtt`, pass=`w5mqtt`
+- NOTA: broker `178.128.48.114:8887/mqtt` + `w5mqtt24.` ialah broker LAMA (lora2u_nodejs, dah dibuang) — JANGAN guna.
+- Backend v3 `MQTT_ENABLED=true`, subscribe broker yang sama. Disahkan connect: `[mqtt] ✓ Connected to broker`.
 
 ---
 
