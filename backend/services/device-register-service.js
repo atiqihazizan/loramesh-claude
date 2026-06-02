@@ -41,6 +41,9 @@ function pickActiveAgency(deviceAgencies) {
 /**
  * PUBLIC — APK check after reinstall.
  */
+/**
+ * PUBLIC — APK check after reinstall.
+ */
 export async function checkDevice(deviceId) {
   const device = await prisma.devices.findUnique({
     where: { device_id: deviceId },
@@ -74,6 +77,7 @@ export async function checkDevice(deviceId) {
       need_approval: device.need_approval,
       date_approved: device.date_approved,
       agency_id: activeAgency?.id ?? null,
+      agency_code: activeAgency?.code ?? null,
       agency_name: activeAgency?.name ?? null,
       agency_token: activeAgency?.agency_token ?? null,
       last_known: mapLastKnown(live),
@@ -265,6 +269,7 @@ export async function registerDevice({ deviceId, name, agencyId: _bodyAgencyId }
       need_approval: deviceRow.need_approval,
     },
     agency_id: agencyRow.id,
+    agency_code: agencyRow.code,
     agency_name: agencyRow.name,
     agency_token: agency.token,
     is_new,
