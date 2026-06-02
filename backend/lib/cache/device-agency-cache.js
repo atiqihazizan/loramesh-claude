@@ -1,10 +1,11 @@
 // lib/cache/device-agency-cache.js
-// Map device_id → [agency_token, ...] for fast routing of incoming MQTT/Socket data.
+// Map device_id → Set<agency_id> for fast routing of incoming MQTT/Socket data.
 // One device can belong to multiple agencies (via device_agency join table).
+// Paksi routing: agency_id (bukan agency_token lagi).
 
 import prisma from '../prisma.js';
 
-/** Map<device_id, Set<agency_token>> */
+/** Map<device_id, Set<agency_id>> */
 const cache = new Map();
 
 export async function loadDeviceAgencyCache() {
@@ -13,7 +14,7 @@ export async function loadDeviceAgencyCache() {
     where: { active: true },
     include: {
       device: { select: { device_id: true } },
-      agency: { select: { agency_token: true, status: true } },
+      agency: { select: { id: true, status: true } },
     },
   });
 
@@ -21,19 +22,19 @@ export async function loadDeviceAgencyCache() {
     if (!r.agency?.status) continue;          // skip inactive agencies
     if (!r.device?.device_id) continue;       // safety
     const did = r.device.device_id;
-    const token = r.agency.agency_token;
+    const aid = r.agency.id;
     if (!cache.has(did)) cache.set(did, new Set());
-    cache.get(did).add(token);
+    cache.get(did).add(aid);
   }
   console.log(`[cache:device-agency] ✓ Loaded ${cache.size} device mappings`);
   return cache.size;
 }
 
 /**
- * Get all agency tokens that this device belongs to.
- * @returns {string[]}
+ * Get all agency ids that this device belongs to.
+ * @returns {number[]}
  */
-export function getAgencyTokensByDeviceId(deviceId) {
+export function getAgencyIdsByDeviceId(deviceId) {
   if (!deviceId) return [];
   const set = cache.get(deviceId);
   return set ? Array.from(set) : [];
@@ -46,19 +47,19 @@ export function hasDeviceInCache(deviceId) {
 /**
  * Called when device is assigned to an agency (via /api/devices or admin UI).
  */
-export function assignDeviceToAgencyInCache(deviceId, agencyToken) {
-  if (!deviceId || !agencyToken) return;
+export function assignDeviceToAgencyInCache(deviceId, agencyId) {
+  if (!deviceId || agencyId == null) return;
   if (!cache.has(deviceId)) cache.set(deviceId, new Set());
-  cache.get(deviceId).add(agencyToken);
+  cache.get(deviceId).add(agencyId);
 }
 
 /**
  * Called when device removed from agency.
  */
-export function unassignDeviceFromAgencyInCache(deviceId, agencyToken) {
+export function unassignDeviceFromAgencyInCache(deviceId, agencyId) {
   const set = cache.get(deviceId);
   if (!set) return;
-  set.delete(agencyToken);
+  set.delete(agencyId);
   if (set.size === 0) cache.delete(deviceId);
 }
 

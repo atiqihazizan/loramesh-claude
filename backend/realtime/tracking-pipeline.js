@@ -5,7 +5,7 @@
 // Aliran:
 //   1. normalize  — payload mentah → bentuk kanonik
 //   2. validate   — tolak kalau rosak
-//   3. route      — cari agency mana device ni milik
+//   3. route      — cari agency mana device ni milik (guna agency_id)
 //   4. enrich     — tambah info device dari cache
 //   5. save       — live_tracking (throttled) + playback_* (sentiasa)
 //   6. broadcast  — Socket.IO emit (throttled)
@@ -19,8 +19,8 @@ import {
   toPlaybackRow,
   toSocketEmit,
 } from '../lib/data-structure.js';
-import { getAgencyTokensByDeviceId } from '../lib/cache/device-agency-cache.js';
-import { getAgencyFromCache } from '../lib/cache/agency-cache.js';
+import { getAgencyIdsByDeviceId } from '../lib/cache/device-agency-cache.js';
+import { getAgencyById } from '../lib/cache/agency-cache.js';
 import { getDeviceByDeviceId, updateDeviceInCache } from '../lib/cache/device-cache.js';
 import { getDeviceStaticStatus } from '../lib/cache/device-static-cache.js';
 import { insertPlaybackRow } from '../lib/playback.js';
@@ -101,9 +101,9 @@ export async function processTracking(rawPayload, source, opts = {}) {
     return { ok: false, reason: validation.reason, device_id: data.device_id };
   }
 
-  // --- 3. ROUTE: cari agency ---
-  const agencyTokens = getAgencyTokensByDeviceId(data.device_id);
-  if (agencyTokens.length === 0) {
+  // --- 3. ROUTE: cari agency (guna agency_id) ---
+  const agencyIds = getAgencyIdsByDeviceId(data.device_id);
+  if (agencyIds.length === 0) {
     // Device belum di-assign ke mana-mana agency — abai (bukan error)
     if (env.MQTT.VERBOSE_LOG) {
       console.log(`[pipeline] Device ${data.device_id} belum assigned ke agency — skip`);
@@ -129,8 +129,8 @@ export async function processTracking(rawPayload, source, opts = {}) {
 
   // Untuk setiap agency device ni milik
   const agencyResults = [];
-  for (const token of agencyTokens) {
-    const agency = getAgencyFromCache(token);
+  for (const agencyId of agencyIds) {
+    const agency = getAgencyById(agencyId);
     if (!agency) continue;
 
     if (doWrite) {
