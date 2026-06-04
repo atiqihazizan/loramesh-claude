@@ -301,9 +301,116 @@ export async function createDevice(payload, user) {
 // UPDATE
 // =====================================================================
 
+/**
+ * SUPERADMIN only — move device to another agency without re-approval.
+ */
+async function transferDeviceAgencySuperadmin(devicePkId, targetAgencyIdRaw, deviceRow) {
+  const targetAgencyId = parseInt(targetAgencyIdRaw, 10);
+  if (!targetAgencyId) {
+    const err = new Error('Invalid agency_id');
+    err.status = 400;
+    throw err;
+  }
+
+  const agencyRow = await prisma.agency.findUnique({
+    where: { id: targetAgencyId },
+    select: { id: true, status: true },
+  });
+  if (!agencyRow?.status) {
+    const err = new Error('Agency not found or inactive');
+    err.status = 400;
+    throw err;
+  }
+
+  const currentAgencyId = deviceRow.agencies[0]?.id ?? null;
+  if (currentAgencyId === targetAgencyId) {
+    return;
+  }
+
+  let oldAgencyId = null;
+  const deviceIdStr = deviceRow.device_id;
+
+  await prisma.$transaction(async (tx) => {
+    const existingLink = await tx.device_agency.findUnique({
+      where: {
+        device_id_agency_id: {
+          device_id: devicePkId,
+          agency_id: targetAgencyId,
+        },
+      },
+    });
+
+    const otherActive = await tx.device_agency.findMany({
+      where: {
+        device_id: devicePkId,
+        active: true,
+        agency_id: { not: targetAgencyId },
+      },
+    });
+
+    oldAgencyId = otherActive.length > 0 ? otherActive[0].agency_id : null;
+    if (otherActive.length > 0) {
+      await tx.device_agency.updateMany({
+        where: {
+          device_id: devicePkId,
+          active: true,
+          agency_id: { not: targetAgencyId },
+        },
+        data: { active: false, deactivated_at: new Date() },
+      });
+    }
+
+    if (existingLink) {
+      await tx.device_agency.update({
+        where: { id: existingLink.id },
+        data: { active: true, deactivated_at: null },
+      });
+    } else {
+      await tx.device_agency.create({
+        data: {
+          device_id: devicePkId,
+          agency_id: targetAgencyId,
+          name: deviceRow.name,
+          active: true,
+        },
+      });
+    }
+
+    await tx.devices.update({
+      where: { id: devicePkId },
+      data: { need_approval: false, date_approved: new Date() },
+    });
+
+    await tx.device_log.create({
+      data: {
+        device_id: devicePkId,
+        change_type: 'transfer',
+        old_agency_id: oldAgencyId,
+        new_agency_id: targetAgencyId,
+        change_reason: 'Agency reassigned by superadmin (settings)',
+      },
+    });
+  });
+
+  if (oldAgencyId != null) {
+    unassignDeviceFromAgencyInCache(deviceIdStr, oldAgencyId);
+  }
+  assignDeviceToAgencyInCache(deviceIdStr, targetAgencyId);
+}
+
 export async function updateDevice(id, patch, user) {
-  // Load + access check via getDeviceById (throws if forbidden)
-  await getDeviceById(id, user);
+  const deviceRow = await getDeviceById(id, user);
+
+  let agencyTransferred = false;
+  if (patch.agency_id !== undefined) {
+    if (user.level.code !== ROLES.SUPERADMIN) {
+      const err = new Error('Only superadmin may change device agency');
+      err.status = 403;
+      throw err;
+    }
+    await transferDeviceAgencySuperadmin(id, patch.agency_id, deviceRow);
+    agencyTransferred = true;
+  }
 
   const allowed = {};
   if (patch.name !== undefined) allowed.name = patch.name;
@@ -327,13 +434,15 @@ export async function updateDevice(id, patch, user) {
     }
   }
 
-  if (Object.keys(allowed).length === 0) {
+  if (Object.keys(allowed).length === 0 && !agencyTransferred) {
     const err = new Error('No valid fields to update');
     err.status = 400;
     throw err;
   }
 
-  await prisma.devices.update({ where: { id }, data: allowed });
+  if (Object.keys(allowed).length > 0) {
+    await prisma.devices.update({ where: { id }, data: allowed });
+  }
   await refreshDeviceCaches();
 
   return getDeviceById(id, user);

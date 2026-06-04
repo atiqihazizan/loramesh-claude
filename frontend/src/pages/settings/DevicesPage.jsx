@@ -197,6 +197,8 @@ export default function DevicesPage() {
                 key={modal.mode === 'create' ? 'create' : String(modal.device.id)}
                 mode={modal.mode}
                 device={modal.device}
+                isSuperadmin={isSuperadmin}
+                agencies={agencies}
                 onClose={() => setModal(null)}
                 onSubmitCreate={async (payload) => {
                   setFormError(null);

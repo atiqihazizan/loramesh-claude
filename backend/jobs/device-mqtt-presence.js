@@ -128,7 +128,6 @@ async function bootstrapPresenceFromDb() {
   const rows = await prisma.live_tracking.findMany({
     where: {
       status_live: { not: STATUS_LIVE.OFFLINE },
-      agency_id: { not: null },
     },
     select: {
       device_id: true,

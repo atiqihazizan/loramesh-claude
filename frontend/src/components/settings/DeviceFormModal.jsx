@@ -20,6 +20,7 @@ function emptyCreateForm() {
 }
 
 function deviceToForm(device) {
+  const agencyId = device.agencies?.[0]?.id;
   return {
     device_id: device.device_id ?? '',
     name: device.name ?? '',
@@ -29,6 +30,7 @@ function deviceToForm(device) {
     longitude: device.longitude != null ? String(device.longitude) : '',
     is_static: Boolean(device.is_static),
     logging_enabled: device.logging_enabled !== false,
+    agency_id: agencyId != null ? String(agencyId) : '',
   };
 }
 
@@ -40,6 +42,8 @@ export default function DeviceFormModal({
   onSubmitUpdate,
   isSubmitting,
   submitError,
+  isSuperadmin = false,
+  agencies = [],
 }) {
   const { deviceTypes, isLoading: typesLoading } = useDeviceTypes();
   const [form, setForm] = useState(() =>
@@ -82,6 +86,13 @@ export default function DeviceFormModal({
       } else {
         const patch = { ...payload };
         delete patch.device_id;
+        if (isSuperadmin && form.agency_id) {
+          const newAgencyId = parseInt(form.agency_id, 10);
+          const prevAgencyId = device.agencies?.[0]?.id;
+          if (newAgencyId && newAgencyId !== prevAgencyId) {
+            patch.agency_id = newAgencyId;
+          }
+        }
         await onSubmitUpdate(device.id, patch);
       }
       onClose();
@@ -147,6 +158,27 @@ export default function DeviceFormModal({
                 onChange={(e) => setField('device_mac', e.target.value)}
               />
             </div>
+            {mode === 'edit' && isSuperadmin && agencies.length > 0 ? (
+              <div className="sm:col-span-2">
+                <label className="label" htmlFor="dev-agency">
+                  Agency
+                </label>
+                <select
+                  id="dev-agency"
+                  className="input"
+                  value={form.agency_id}
+                  onChange={(e) => setField('agency_id', e.target.value)}
+                  required
+                >
+                  {agencies.map((a) => (
+                    <option key={a.id} value={String(a.id)}>
+                      {a.name}
+                      {a.code ? ` (${a.code})` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : null}
             <div>
               <label className="label" htmlFor="dev-type">
                 Type
