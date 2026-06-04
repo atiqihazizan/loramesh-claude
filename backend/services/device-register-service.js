@@ -3,9 +3,9 @@
 import prisma from '../lib/prisma.js';
 import {
   assignDeviceToAgencyInCache,
-  loadDeviceAgencyCache,
   unassignDeviceFromAgencyInCache,
 } from '../lib/cache/device-agency-cache.js';
+import { updateDeviceInCache } from '../lib/cache/device-cache.js';
 import { notifyDevicePending } from './notification-service.js';
 
 function httpError(message, status) {
@@ -112,7 +112,7 @@ export async function registerDevice({ deviceId, name, agencyId: _bodyAgencyId }
   }
 
   let is_new = false;
-  const tokensToUnassign = [];
+  const agencyIdsToUnassign = [];
 
   const { deviceRow } = await prisma.$transaction(async (tx) => {
     let deviceRow = await tx.devices.findUnique({ where: { device_id: deviceId } });
@@ -169,17 +169,12 @@ export async function registerDevice({ deviceId, name, agencyId: _bodyAgencyId }
         active: true,
         agency_id: { not: targetAgencyId },
       },
-      include: {
-        agency: { select: { agency_token: true } },
-      },
     });
 
     if (otherActive.length > 0) {
       const oldAgencyId = otherActive[0].agency_id;
       for (const row of otherActive) {
-        if (row.agency?.agency_token) {
-          tokensToUnassign.push(row.agency.agency_token);
-        }
+        agencyIdsToUnassign.push(row.agency_id);
       }
       await tx.device_agency.updateMany({
         where: {
@@ -241,14 +236,11 @@ export async function registerDevice({ deviceId, name, agencyId: _bodyAgencyId }
     return { deviceRow };
   });
 
-  for (const token of tokensToUnassign) {
-    unassignDeviceFromAgencyInCache(deviceId, token);
+  for (const aid of agencyIdsToUnassign) {
+    unassignDeviceFromAgencyInCache(deviceId, aid);
   }
-  if (agencyRow.agency_token) {
-    assignDeviceToAgencyInCache(deviceId, agencyRow.agency_token);
-  } else {
-    await loadDeviceAgencyCache();
-  }
+  assignDeviceToAgencyInCache(deviceId, targetAgencyId);
+  updateDeviceInCache(deviceId, { status: 'offline' });
 
   if (is_new) {
     try {
@@ -317,7 +309,7 @@ export async function switchAgency({ deviceId, agencyId }) {
     throw httpError('Device not found — register first', 404);
   }
 
-  const tokensToUnassign = [];
+  let oldAgencyId = null;
 
   await prisma.$transaction(async (tx) => {
     // Cari link sedia ada untuk agency sasaran (jika pernah ada).
@@ -337,13 +329,9 @@ export async function switchAgency({ deviceId, agencyId }) {
         active: true,
         agency_id: { not: targetAgencyId },
       },
-      include: { agency: { select: { agency_token: true } } },
     });
 
-    const oldAgencyId = otherActive.length > 0 ? otherActive[0].agency_id : null;
-    for (const row of otherActive) {
-      if (row.agency?.agency_token) tokensToUnassign.push(row.agency.agency_token);
-    }
+    oldAgencyId = otherActive.length > 0 ? otherActive[0].agency_id : null;
     if (otherActive.length > 0) {
       await tx.device_agency.updateMany({
         where: {
@@ -389,15 +377,11 @@ export async function switchAgency({ deviceId, agencyId }) {
     });
   });
 
-  // Kemas cache device→agency.
-  for (const token of tokensToUnassign) {
-    unassignDeviceFromAgencyInCache(deviceId, token);
+  // Kemas cache device→agency (guna agency_id — selari device-agency-cache v3).
+  if (oldAgencyId != null) {
+    unassignDeviceFromAgencyInCache(deviceId, oldAgencyId);
   }
-  if (agencyRow.agency_token) {
-    assignDeviceToAgencyInCache(deviceId, agencyRow.agency_token);
-  } else {
-    await loadDeviceAgencyCache();
-  }
+  assignDeviceToAgencyInCache(deviceId, targetAgencyId);
 
   // Notify admin agency baru (pending).
   try {
