@@ -121,7 +121,7 @@ async function bootstrap() {
       console.log(`[server] ✓ http://localhost:${env.PORT}/api/health/ping`);
       console.log('');
 
-      startHeartbeatWatchdog(30000);
+      startHeartbeatWatchdog();
       startCacheCleanup();
     });
 

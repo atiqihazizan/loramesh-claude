@@ -10,7 +10,6 @@
 //   5. save       — live_tracking (throttled) + playback_* (sentiasa)
 //   6. broadcast  — Socket.IO emit (throttled)
 
-import prisma from '../lib/prisma.js';
 import { env } from '../config/env.js';
 import {
   normalizeTrackingData,
@@ -21,9 +20,15 @@ import {
 } from '../lib/data-structure.js';
 import { getAgencyIdsByDeviceId } from '../lib/cache/device-agency-cache.js';
 import { getAgencyById } from '../lib/cache/agency-cache.js';
-import { getDeviceByDeviceId, updateDeviceInCache } from '../lib/cache/device-cache.js';
+import { getDeviceByDeviceId } from '../lib/cache/device-cache.js';
 import { getDeviceStaticStatus } from '../lib/cache/device-static-cache.js';
 import { insertPlaybackRow } from '../lib/playback.js';
+import {
+  persistLiveTrackingSnapshot,
+  rawPayloadHasExplicitStatus,
+} from '../lib/live-tracking-write.js';
+import { DATA_SOURCE, STATUS_LIVE } from '../config/constants.js';
+import { touchMqttPresence } from '../jobs/device-mqtt-presence.js';
 
 // =====================================================================
 // THROTTLE STATE (in-memory; reset on restart)
@@ -125,64 +130,24 @@ export async function processTracking(rawPayload, source, opts = {}) {
   const loggingEnabled = staticStatus ? staticStatus.logging_enabled !== false : true;
 
   // --- 5. SAVE ---
-  const doWrite = opts.forceWrite || shouldWriteDb(data.device_id);
+  const explicitStatus = rawPayloadHasExplicitStatus(rawPayload);
+  const doWrite =
+    opts.forceWrite || explicitStatus || shouldWriteDb(data.device_id);
 
   // Untuk setiap agency device ni milik
   const agencyResults = [];
+  /** @type {'status_only'|'full'|null} */
+  let lastWriteMode = null;
+
   for (const agencyId of agencyIds) {
     const agency = getAgencyById(agencyId);
     if (!agency) continue;
 
     if (doWrite) {
       try {
-        // 5a. Upsert live_tracking (snapshot semasa)
         const liveRow = toLiveTrackingRow(data, agency.agencyId);
-        await prisma.live_tracking.upsert({
-          where: { device_id: data.device_id },
-          create: liveRow,
-          update: {
-            agency_id: liveRow.agency_id,
-            device_type_id: liveRow.device_type_id,
-            latitude: liveRow.latitude,
-            longitude: liveRow.longitude,
-            speed: liveRow.speed,
-            heading: liveRow.heading,
-            accuracy: liveRow.accuracy,
-            status_live: liveRow.status_live,
-            motion_status: liveRow.motion_status,
-            cpu_temp: liveRow.cpu_temp,
-            battery_level: liveRow.battery_level,
-            transmission_type: liveRow.transmission_type,
-            device_model: liveRow.device_model,
-            device_os: liveRow.device_os,
-            sensor_data: liveRow.sensor_data,
-            send_dt: liveRow.send_dt,
-            node_dt: liveRow.node_dt,
-            received_at: liveRow.received_at,
-          },
-        });
-
-        // 5b. Update devices.last_seen_at + denormalized fields
-        await prisma.devices.updateMany({
-          where: { device_id: data.device_id },
-          data: {
-            last_seen_at: data.received_at,
-            status: data.status_live,
-            send_dt: data.send_dt,
-            node_dt: data.node_dt,
-            cpu_temp: data.cpu_temp,
-            speed: data.speed,
-            heading: data.heading,
-            ...(staticStatus?.is_static
-              ? {}
-              : { latitude: data.latitude, longitude: data.longitude }),
-          },
-        });
-
-        // Sync cache
-        updateDeviceInCache(data.device_id, {
-          status: data.status_live,
-        });
+        const wr = await persistLiveTrackingSnapshot({ liveRow, data, staticStatus });
+        lastWriteMode = wr.mode;
       } catch (e) {
         console.error(`[pipeline] DB write error (${data.device_id}):`, e.message);
       }
@@ -200,12 +165,31 @@ export async function processTracking(rawPayload, source, opts = {}) {
     }
   }
 
+  if (source === DATA_SOURCE.MQTT) {
+    touchMqttPresence(data.device_id, data.device_type_id, agencyIds, data.status_live);
+  }
+
   // --- 6. BROADCAST Socket.IO ---
-  const doBroadcast = opts.forceBroadcast || shouldBroadcast(data.device_id);
+  const doBroadcast =
+    opts.forceBroadcast || explicitStatus || shouldBroadcast(data.device_id);
   if (doBroadcast && ioRef) {
-    const emitData = toSocketEmit(data, deviceMeta);
-    for (const r of agencyResults) {
-      ioRef.to(`agency:${r.agencyId}`).emit('device:update', emitData);
+    const statusOnlyOffline =
+      data.status_live === STATUS_LIVE.OFFLINE &&
+      (lastWriteMode === 'status_only' ||
+        (data.latitude == null && data.longitude == null));
+
+    if (statusOnlyOffline) {
+      for (const r of agencyResults) {
+        ioRef.to(`agency:${r.agencyId}`).emit('device:status', {
+          device_id: data.device_id,
+          status_live: STATUS_LIVE.OFFLINE,
+        });
+      }
+    } else {
+      const emitData = toSocketEmit(data, deviceMeta);
+      for (const r of agencyResults) {
+        ioRef.to(`agency:${r.agencyId}`).emit('device:update', emitData);
+      }
     }
   }
 
