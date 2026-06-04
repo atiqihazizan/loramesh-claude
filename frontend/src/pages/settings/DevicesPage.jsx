@@ -73,7 +73,17 @@ export default function DevicesPage() {
           <span className="text-slate-500">Approved</span>
         ),
     },
-    { key: 'status', label: 'Status' },
+    // { key: 'status', label: 'Status' },
+    {
+      key: 'active',
+      label: 'Status',
+      render: (row) =>
+        row.active ? (
+          <span className="text-green-600 font-medium">Active</span>
+        ) : (
+          <span className="text-slate-400">Inactive</span>
+        ),
+    },
   ];
 
   const runDelete = async () => {

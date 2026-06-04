@@ -28,7 +28,11 @@ function mapLastKnown(live) {
 }
 
 function pickActiveAgency(deviceAgencies) {
-  const link = deviceAgencies?.find((da) => da.active && da.agency);
+  if (!deviceAgencies || deviceAgencies.length === 0) return null;
+  // Cuba link aktif dulu; kalau tiada, ambil yang terkini (sudah diorder desc).
+  const link =
+    deviceAgencies.find((da) => da.active && da.agency) ||
+    deviceAgencies.find((da) => da.agency);
   if (!link?.agency) return null;
   return {
     id: link.agency.id,
@@ -41,20 +45,18 @@ function pickActiveAgency(deviceAgencies) {
 /**
  * PUBLIC — APK check after reinstall.
  */
-/**
- * PUBLIC — APK check after reinstall.
- */
 export async function checkDevice(deviceId) {
   const device = await prisma.devices.findUnique({
     where: { device_id: deviceId },
     include: {
       device_agencies: {
-        where: { active: true },
+        // ambil SEMUA link, bukan hanya aktif — supaya tak hilang code
         include: {
           agency: {
             select: { id: true, code: true, name: true, agency_token: true },
           },
         },
+        orderBy: { assigned_at: 'desc' }, // terkini dulu
       },
     },
   });
@@ -269,10 +271,153 @@ export async function registerDevice({ deviceId, name, agencyId: _bodyAgencyId }
       need_approval: deviceRow.need_approval,
     },
     agency_id: agencyRow.id,
-    agency_code: agencyRow.code,
     agency_name: agencyRow.name,
     agency_token: agency.token,
     is_new,
     need_approval: deviceRow.need_approval,
+  };
+}
+
+/**
+ * PUBLIC (APK) — senarai ringkas agency aktif untuk pemilih tukar agency.
+ * Hanya id, code, name. TANPA agency_token (jangan dedah token).
+ */
+export async function listAgenciesPublic() {
+  const agencies = await prisma.agency.findMany({
+    where: { status: true },
+    select: { id: true, code: true, name: true },
+    orderBy: { name: 'asc' },
+  });
+  return agencies;
+}
+
+/**
+ * PUBLIC (APK) — switch device ke agency lain TANPA scan QR.
+ * Guna device_id + agency_id sahaja. device_id WAJIB sudah wujud.
+ * Set semula need_approval = true (kena approval admin agency baru).
+ */
+export async function switchAgency({ deviceId, agencyId }) {
+  const targetAgencyId = parseInt(agencyId, 10);
+  if (!deviceId || !targetAgencyId) {
+    throw httpError('device_id and agency_id are required', 400);
+  }
+
+  const agencyRow = await prisma.agency.findUnique({
+    where: { id: targetAgencyId },
+    select: { id: true, code: true, name: true, agency_token: true, status: true },
+  });
+  if (!agencyRow?.status) {
+    throw httpError('Agency not found or inactive', 403);
+  }
+
+  const deviceRow = await prisma.devices.findUnique({
+    where: { device_id: deviceId },
+  });
+  if (!deviceRow) {
+    throw httpError('Device not found — register first', 404);
+  }
+
+  const tokensToUnassign = [];
+
+  await prisma.$transaction(async (tx) => {
+    // Cari link sedia ada untuk agency sasaran (jika pernah ada).
+    const existingLink = await tx.device_agency.findUnique({
+      where: {
+        device_id_agency_id: {
+          device_id: deviceRow.id,
+          agency_id: targetAgencyId,
+        },
+      },
+    });
+
+    // Nyahaktif semua link aktif ke agency lain.
+    const otherActive = await tx.device_agency.findMany({
+      where: {
+        device_id: deviceRow.id,
+        active: true,
+        agency_id: { not: targetAgencyId },
+      },
+      include: { agency: { select: { agency_token: true } } },
+    });
+
+    const oldAgencyId = otherActive.length > 0 ? otherActive[0].agency_id : null;
+    for (const row of otherActive) {
+      if (row.agency?.agency_token) tokensToUnassign.push(row.agency.agency_token);
+    }
+    if (otherActive.length > 0) {
+      await tx.device_agency.updateMany({
+        where: {
+          device_id: deviceRow.id,
+          active: true,
+          agency_id: { not: targetAgencyId },
+        },
+        data: { active: false, deactivated_at: new Date() },
+      });
+    }
+
+    // Aktifkan / cipta link ke agency sasaran.
+    if (existingLink) {
+      await tx.device_agency.update({
+        where: { id: existingLink.id },
+        data: { active: true, deactivated_at: null },
+      });
+    } else {
+      await tx.device_agency.create({
+        data: {
+          device_id: deviceRow.id,
+          agency_id: targetAgencyId,
+          active: true,
+        },
+      });
+    }
+
+    // Set semula perlu approval.
+    await tx.devices.update({
+      where: { id: deviceRow.id },
+      data: { need_approval: true, date_approved: null },
+    });
+
+    // Log transfer.
+    await tx.device_log.create({
+      data: {
+        device_id: deviceRow.id,
+        change_type: 'transfer',
+        old_agency_id: oldAgencyId,
+        new_agency_id: targetAgencyId,
+        change_reason: 'Agency switch via APK (no QR)',
+      },
+    });
+  });
+
+  // Kemas cache device→agency.
+  for (const token of tokensToUnassign) {
+    unassignDeviceFromAgencyInCache(deviceId, token);
+  }
+  if (agencyRow.agency_token) {
+    assignDeviceToAgencyInCache(deviceId, agencyRow.agency_token);
+  } else {
+    await loadDeviceAgencyCache();
+  }
+
+  // Notify admin agency baru (pending).
+  try {
+    await notifyDevicePending({
+      deviceId: deviceRow.device_id,
+      deviceName: deviceRow.name,
+      agencyId: targetAgencyId,
+    });
+  } catch (err) {
+    console.error('[device-register] notifyDevicePending (switch) failed:', err);
+  }
+
+  return {
+    success: true,
+    device_id: deviceRow.device_id,
+    name: deviceRow.name,
+    need_approval: true,
+    agency_id: agencyRow.id,
+    agency_code: agencyRow.code,
+    agency_name: agencyRow.name,
+    agency_token: agencyRow.agency_token,
   };
 }

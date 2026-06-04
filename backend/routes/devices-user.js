@@ -1,6 +1,11 @@
 import express from 'express';
 import { authenticateAgencyToken } from '../middleware/auth-agency-token.js';
-import { checkDevice, registerDevice } from '../services/device-register-service.js';
+import {
+  checkDevice,
+  registerDevice,
+  listAgenciesPublic,
+  switchAgency,
+} from '../services/device-register-service.js';
 
 const router = express.Router();
 
@@ -8,6 +13,31 @@ const router = express.Router();
 router.get('/check/:deviceid', async (req, res, next) => {
   try {
     const result = await checkDevice(req.params.deviceid);
+    return res.json(result);
+  } catch (err) {
+    if (err.status) return res.status(err.status).json({ error: err.message });
+    return next(err);
+  }
+});
+
+// GET /api/devices-user/agencies — PUBLIC (APK senarai agency untuk tukar)
+router.get('/agencies', async (req, res, next) => {
+  try {
+    const agencies = await listAgenciesPublic();
+    return res.json({ agencies });
+  } catch (err) {
+    if (err.status) return res.status(err.status).json({ error: err.message });
+    return next(err);
+  }
+});
+
+// POST /api/devices-user/switch-agency — PUBLIC (APK tukar agency tanpa QR)
+// body: { device_id, agency_id }
+router.post('/switch-agency', async (req, res, next) => {
+  try {
+    const { device_id, deviceid, agency_id } = req.body;
+    const id = device_id || deviceid;
+    const result = await switchAgency({ deviceId: id, agencyId: agency_id });
     return res.json(result);
   } catch (err) {
     if (err.status) return res.status(err.status).json({ error: err.message });

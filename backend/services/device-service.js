@@ -77,13 +77,21 @@ export async function listDevices({ user, agencyIdFilter, search, approval = 'ap
     orderBy: { created_at: 'desc' },
   });
 
+  // Ambil status_live dari live_tracking (relasi String FK — query berasingan).
+  const deviceIds = devices.map((d) => d.device_id);
+  const liveRows = await prisma.live_tracking.findMany({
+    where: { device_id: { in: deviceIds } },
+    select: { device_id: true, status_live: true },
+  });
+  const liveMap = new Map(liveRows.map((r) => [r.device_id, r.status_live]));
+
   return devices.map((d) => ({
     id: d.id,
     device_id: d.device_id,
     device_mac: d.device_mac,
     name: d.name,
     type: d.device_type,
-    status: d.status,
+    status: liveMap.get(d.device_id) ?? 'offline', // status_live untuk marker map
     is_static: d.is_static,
     logging_enabled: d.logging_enabled,
     latitude: d.latitude,
@@ -92,6 +100,7 @@ export async function listDevices({ user, agencyIdFilter, search, approval = 'ap
     need_approval: d.need_approval,
     date_approved: d.date_approved,
     agencies: d.device_agencies.map((da) => da.agency),
+    active: d.device_agencies.length > 0, // aktif = ada keahlian agensi aktif
     created_at: d.created_at,
   }));
 }
@@ -142,6 +151,7 @@ export async function getDeviceById(id, user) {
     need_approval: d.need_approval,
     date_approved: d.date_approved,
     agencies: d.device_agencies.map((da) => da.agency),
+    active: d.device_agencies.length > 0,
     created_at: d.created_at,
     updated_at: d.updated_at,
   };
