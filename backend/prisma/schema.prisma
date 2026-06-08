@@ -50,6 +50,7 @@ model agency {
   user_agencies       user_agency[]
   device_agencies     device_agency[]
   sites               sites[]
+  boundaries          boundaries[]
   device_logs_old     device_log[]         @relation("DeviceLogOldAgency")
   device_logs_new     device_log[]         @relation("DeviceLogNewAgency")
   live_tracking       live_tracking[]
@@ -345,6 +346,26 @@ model sites {
   @@index([agency_id], map: "idx_sites_agency_id")
   @@index([slug],      map: "idx_sites_slug")
   @@index([publish],   map: "idx_sites_publish")
+}
+
+// ================================================================
+// BOUNDARIES (per-agency geo polygons — geometry in DB)
+// ================================================================
+model boundaries {
+  id          Int       @id @default(autoincrement())
+  agency_id   Int
+  name        String    @db.VarChar(150)
+  visible     Boolean   @default(true)
+  coordinates Json                                    // geometri GeoJSON: Polygon | MultiPolygon
+  created_by  Int       @default(0)
+  updated_by  Int       @default(0)
+  created_at  DateTime  @default(now()) @db.Timestamp(0)
+  updated_at  DateTime  @updatedAt      @db.Timestamp(0)
+
+  agency agency @relation(fields: [agency_id], references: [id], onDelete: Cascade)
+
+  @@index([agency_id], map: "idx_boundaries_agency_id")
+  @@index([visible],   map: "idx_boundaries_visible")
 }
 
 // ================================================================

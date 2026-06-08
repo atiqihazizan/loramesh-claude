@@ -1,6 +1,6 @@
 <!-- =========================================================
      SIMULATOR GEOFENCING — markers = devices dari /api/devices
-     - Boundary dikosongkan, sedia lukis baru
+     - Boundary read-only, dimuat dari /api/boundaries
      - Marker: is_static === false DAN ada lat/lng sah
      - Posisi awal: lat/lng sebenar device
      ========================================================= -->
@@ -21,8 +21,7 @@
 
     <div style="padding:12px;display:flex;gap:8px;flex-wrap:wrap">
       <button id="reloadBtn" style="flex:1;padding:10px;border:none;border-radius:8px;background:#2563eb;color:#fff;font-weight:600;font-size:13px;cursor:pointer">↻ Muat Devices</button>
-      <button id="drawBtn" style="padding:10px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;color:#475569;font-size:13px;cursor:pointer">+ Boundary</button>
-      <button id="copyBtn" style="width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;color:#94a3b8;font-size:12px;cursor:pointer" disabled>Salin kod boundary / laluan</button>
+      <button id="copyBtn" style="width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;color:#94a3b8;font-size:12px;cursor:pointer" disabled>Salin kod laluan</button>
       <button id="playBtn" style="width:100%;padding:10px;border:none;border-radius:8px;background:#7c3aed;color:#fff;font-weight:600;font-size:13px;cursor:pointer">Play Simulasi</button>
     </div>
 
@@ -30,7 +29,7 @@
     <div id="workerList" style="flex:1;overflow-y:auto"></div>
 
     <div style="border-top:1px solid #e2e8f0">
-      <div style="padding:8px 16px;font-size:12px;font-weight:600;color:#475569">BOUNDARY (klik di peta untuk edit)</div>
+      <div style="padding:8px 16px;font-size:12px;font-weight:600;color:#475569">BOUNDARY (read-only, dari API)</div>
       <div id="boundaryList" style="max-height:160px;overflow-y:auto;padding-bottom:8px"></div>
     </div>
   </div>
@@ -38,7 +37,7 @@
   <div style="flex:1;position:relative">
     <div id="map" style="height:100%;width:100%"></div>
     <div id="hint" style="position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:1000;background:rgba(15,23,42,.85);color:#fff;padding:8px 16px;border-radius:20px;font-size:13px;pointer-events:none">
-      Klik boundary untuk edit, atau drag device masuk/keluar kawasan
+      Drag device masuk/keluar kawasan boundary
     </div>
   </div>
 </div>
@@ -118,6 +117,7 @@ document.getElementById('loginBtn').onclick = async () => {
   btn.textContent = 'Login...'; btn.disabled = true;
   try {
     await apiLogin(user, pass);
+    await loadBoundaries();
     await loadDevices();
   } catch (err) {
     alert('Login gagal:\n' + err.message);
@@ -129,45 +129,10 @@ document.getElementById('loginPass').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') document.getElementById('loginBtn').click();
 });
 // =========================================================
-//  BOUNDARY HARDCODE  |  coords: [lat, lng]  |  visible: show/hide
-//  (dikosongkan — lukis boundary baru, kemudian Salin & tampal di sini)
+//  BOUNDARY — dimuat dari API (FeatureCollection). Read-only.
+//  Setiap entri: { id, name, visible, feature }  feature = GeoJSON Feature
 // =========================================================
-const BOUNDARIES = [
-  {
-    id: 100,
-    name: "MTA",
-    visible: true,
-    coords: [
-      [5.389343, 100.464424],
-      [5.388659, 100.464284],
-      [5.388531, 100.464258],
-      [5.388488, 100.464311],
-      [5.388461, 100.464504],
-      [5.388493, 100.464724],
-      [5.388461, 100.464842],
-      [5.388301, 100.465175],
-      [5.388312, 100.465250],
-      [5.388328, 100.465314],
-      [5.388408, 100.465443],
-      [5.388515, 100.465389],
-      [5.388584, 100.465363],
-      [5.388670, 100.465357],
-      [5.388766, 100.465352],
-      [5.388857, 100.465352],
-      [5.388937, 100.465363],
-      [5.389027, 100.465384],
-      [5.389097, 100.465406],
-      [5.389161, 100.465416],
-      [5.389246, 100.465368],
-      [5.389316, 100.465298],
-      [5.389412, 100.465309],
-      [5.389487, 100.465304],
-      [5.389481, 100.465212],
-      [5.389332, 100.464885],
-      [5.389321, 100.464815]
-    ]
-  },
-];
+let BOUNDARIES = [];
 // =========================================================
 //  LALUAN HARDCODE untuk Play Simulasi  |  points: [lat, lng]
 //  Drag device untuk rakam laluan, kemudian Salin & tampal di sini.
@@ -178,11 +143,7 @@ const ROUTES = [
 // =========================================================
 
 let workers = [];                 // simpan device aktif (kekal nama dalaman)
-let nextBoundaryId = 100;
-const boundaryLayers = {};        // id -> L.Polygon
-
-let editingId = null;
-let editHandles = [];
+const boundaryLayers = {};        // id -> L.LayerGroup (geoJSON)
 
 // ---- INIT MAP ----
 const map = L.map('map').setView([3.0414218086159095, 101.65173083605691], 17);
@@ -191,103 +152,12 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 }).addTo(map);
 
 const hintEl = document.getElementById('hint');
-const drawBtn = document.getElementById('drawBtn');
 const copyBtn = document.getElementById('copyBtn');
-
-function toGeoJSON(coords) {
-  const ring = coords.map(c => [c[1], c[0]]);
-  if (ring.length && (ring[0][0] !== ring[ring.length-1][0] || ring[0][1] !== ring[ring.length-1][1])) {
-    ring.push(ring[0]);
-  }
-  return turf.polygon([ring]);
-}
-
-// ---- RENDER BOUNDARY ----
-function renderBoundaries() {
-  Object.values(boundaryLayers).forEach(l => map.removeLayer(l));
-  for (const b of BOUNDARIES) {
-    if (!b.visible) continue;
-    const layer = L.polygon(b.coords, { color:'#3b82f6', weight:2, fillOpacity:0.1 })
-      .addTo(map).bindTooltip(b.name);
-    layer.on('click', (e) => { L.DomEvent.stopPropagation(e); enterEditMode(b.id); });
-    boundaryLayers[b.id] = layer;
-  }
-  renderBoundaryList();
-}
-
-function renderBoundaryList() {
-  const el = document.getElementById('boundaryList');
-  el.innerHTML = '';
-  if (BOUNDARIES.length === 0) {
-    el.innerHTML = '<div style="padding:8px 16px;color:#94a3b8;font-size:12px">Tiada boundary. Tekan "+ Boundary" untuk lukis.</div>';
-    return;
-  }
-  BOUNDARIES.forEach(b => {
-    const row = document.createElement('div');
-    row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:6px 16px';
-    const editing = b.id === editingId;
-    row.innerHTML = '<span style="font-size:13px;color:'+(b.visible?(editing?'#f59e0b':'#0f172a'):'#94a3b8')+';font-weight:'+(editing?'700':'400')+'">'+b.name+'</span>';
-    const btn = document.createElement('button');
-    btn.textContent = b.visible ? 'Hide' : 'Show';
-    btn.style.cssText = 'font-size:11px;padding:2px 10px;border:1px solid #cbd5e1;border-radius:6px;background:#fff;color:#475569;cursor:pointer';
-    btn.onclick = () => { b.visible = !b.visible; if (editingId===b.id) exitEditMode(); renderBoundaries(); workers.forEach(checkWorker); };
-    row.appendChild(btn);
-    el.appendChild(row);
-  });
-}
-
-// ---- MOD EDIT BOUNDARY ----
-function vertexIcon() {
-  return L.divIcon({ className:'', html:'<div style="width:14px;height:14px;border-radius:50%;background:#f59e0b;border:2px solid #fff;box-shadow:0 0 3px rgba(0,0,0,.5)"></div>', iconSize:[14,14], iconAnchor:[7,7] });
-}
-
-function enterEditMode(id) {
-  if (drawing) return;
-  exitEditMode();
-  const b = BOUNDARIES.find(x => x.id === id);
-  if (!b || !b.visible) return;
-  editingId = id;
-  boundaryLayers[id].setStyle({ color:'#f59e0b', weight:3 });
-
-  b.coords.forEach((c, i) => {
-    const h = L.marker(c, { draggable:true, icon: vertexIcon() }).addTo(map);
-    h.on('drag', () => {
-      const ll = h.getLatLng();
-      b.coords[i] = [ll.lat, ll.lng];
-      boundaryLayers[id].setLatLngs(b.coords);
-      workers.forEach(checkWorker);
-    });
-    h.on('dragend', () => setCopyTarget(b));
-    editHandles.push(h);
-  });
-
-  setCopyTarget(b);
-  renderBoundaryList();
-  hintEl.textContent = 'Edit "'+b.name+'": drag bucu kuning. Klik peta kosong untuk selesai.';
-}
-
-function exitEditMode() {
-  editHandles.forEach(h => map.removeLayer(h));
-  editHandles = [];
-  if (editingId != null && boundaryLayers[editingId]) {
-    boundaryLayers[editingId].setStyle({ color:'#3b82f6', weight:2 });
-  }
-  editingId = null;
-  renderBoundaryList();
-}
-
-// ---- SALIN KOD ----
 let lastSnippet = '';
-function snippetFor(b) {
-  const coordsStr = b.coords.map(p => '    [' + p[0].toFixed(6) + ', ' + p[1].toFixed(6) + ']').join(',\n');
-  return '{\n  id: ' + b.id + ',\n  name: "' + b.name + '",\n  visible: ' + b.visible + ',\n  coords: [\n' + coordsStr + '\n  ]\n},';
-}
-function setCopyTarget(b) {
-  lastSnippet = snippetFor(b);
-  copyBtn.disabled = false;
-  copyBtn.style.color = '#16a34a';
-  copyBtn.style.borderColor = '#16a34a';
-  copyBtn.textContent = 'Salin kod "' + b.name + '"';
+
+function fallbackCopy(text, cb) {
+  const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta);
+  ta.select(); try { document.execCommand('copy'); } catch(e){} document.body.removeChild(ta); cb();
 }
 copyBtn.onclick = () => {
   if (!lastSnippet) return;
@@ -297,59 +167,62 @@ copyBtn.onclick = () => {
     navigator.clipboard.writeText(lastSnippet).then(done).catch(()=>fallbackCopy(lastSnippet,done));
   } else { fallbackCopy(lastSnippet, done); }
 };
-function fallbackCopy(text, cb) {
-  const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta);
-  ta.select(); try { document.execCommand('copy'); } catch(e){} document.body.removeChild(ta); cb();
+
+// ---- MUAT BOUNDARY DARI API ----
+async function loadBoundaries() {
+  try {
+    if (!authToken) return;
+    const res = await fetch(API_BASE + '/boundaries', {
+      headers: { 'Authorization': 'Bearer ' + authToken }
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const fc = await res.json();
+    BOUNDARIES = (fc.features || []).map(f => ({
+      id: f.properties.id,
+      name: f.properties.name,
+      visible: f.properties.visible !== false,
+      feature: f,
+    }));
+    renderBoundaries();
+    workers.forEach(checkWorker);
+  } catch (err) {
+    console.error('Gagal muat boundary:', err);
+    hintEl.textContent = 'Gagal muat boundary: ' + err.message;
+  }
 }
 
-// ---- DRAW BOUNDARY BARU ----
-let drawing = false, drawPts = [], tempLine = null, tempDots = [];
-function startDraw() {
-  exitEditMode();
-  drawing = true; drawPts = [];
-  drawBtn.textContent = 'Siap (klik selesai)';
-  drawBtn.style.background = '#16a34a'; drawBtn.style.color = '#fff'; drawBtn.style.borderColor = '#16a34a';
-  document.getElementById('map').style.cursor = 'crosshair';
-  map.doubleClickZoom.disable();
-  hintEl.textContent = 'Klik atas peta untuk letak titik (min 3), kemudian tekan Siap';
-}
-function finishDraw() {
-  drawing = false;
-  document.getElementById('map').style.cursor = '';
-  map.doubleClickZoom.enable();
-  drawBtn.textContent = '+ Boundary';
-  drawBtn.style.background = '#fff'; drawBtn.style.color = '#475569'; drawBtn.style.borderColor = '#cbd5e1';
-  hintEl.textContent = 'Klik boundary untuk edit, atau drag device masuk/keluar kawasan';
-  clearTemp();
-  if (drawPts.length >= 3) {
-    const name = prompt('Nama boundary:') || ('Boundary ' + nextBoundaryId);
-    const b = { id: nextBoundaryId++, name, visible: true, coords: drawPts.slice() };
-    BOUNDARIES.push(b);
-    renderBoundaries(); workers.forEach(checkWorker);
-    setCopyTarget(b);
-  } else if (drawPts.length > 0) {
-    alert('Perlu sekurang-kurangnya 3 titik.');
+// ---- RENDER BOUNDARY (read-only, guna L.geoJSON) ----
+function renderBoundaries() {
+  Object.values(boundaryLayers).forEach(l => map.removeLayer(l));
+  for (const b of BOUNDARIES) {
+    if (!b.visible) continue;
+    const layer = L.geoJSON(b.feature, {
+      style: { color:'#3b82f6', weight:2, fillOpacity:0.1 }
+    }).addTo(map).bindTooltip(b.name);
+    boundaryLayers[b.id] = layer;
   }
-  drawPts = [];
+  renderBoundaryList();
 }
-function clearTemp() {
-  if (tempLine) { map.removeLayer(tempLine); tempLine = null; }
-  tempDots.forEach(d => map.removeLayer(d)); tempDots = [];
-}
-function redrawTemp() {
-  clearTemp();
-  drawPts.forEach(p => tempDots.push(L.circleMarker(p, { radius:5, color:'#16a34a', fillColor:'#16a34a', fillOpacity:1 }).addTo(map)));
-  if (drawPts.length >= 2) tempLine = L.polyline(drawPts, { color:'#16a34a', dashArray:'5,5' }).addTo(map);
-}
-drawBtn.onclick = () => { drawing ? finishDraw() : startDraw(); };
 
-map.on('click', (e) => {
-  if (drawing) { drawPts.push([e.latlng.lat, e.latlng.lng]); redrawTemp(); return; }
-  if (editingId != null) {
-    exitEditMode();
-    hintEl.textContent = 'Klik boundary untuk edit, atau drag device masuk/keluar kawasan';
+function renderBoundaryList() {
+  const el = document.getElementById('boundaryList');
+  el.innerHTML = '';
+  if (BOUNDARIES.length === 0) {
+    el.innerHTML = '<div style="padding:8px 16px;color:#94a3b8;font-size:12px">Tiada boundary.</div>';
+    return;
   }
-});
+  BOUNDARIES.forEach(b => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:6px 16px';
+    row.innerHTML = '<span style="font-size:13px;color:'+(b.visible?'#0f172a':'#94a3b8')+'">'+b.name+'</span>';
+    const btn = document.createElement('button');
+    btn.textContent = b.visible ? 'Hide' : 'Show';
+    btn.style.cssText = 'font-size:11px;padding:2px 10px;border:1px solid #cbd5e1;border-radius:6px;background:#fff;color:#475569;cursor:pointer';
+    btn.onclick = () => { b.visible = !b.visible; renderBoundaries(); workers.forEach(checkWorker); };
+    row.appendChild(btn);
+    el.appendChild(row);
+  });
+}
 
 // ---- DEVICE MARKER ----
 function workerIcon(color, label) {
@@ -447,19 +320,19 @@ async function loadDevices() {
 }
 document.getElementById('reloadBtn').onclick = loadDevices;
 
-// ---- POINT IN POLYGON ----
+// ---- POINT IN POLYGON (loop setiap Feature) ----
 function checkWorker(w) {
   const ll = w.marker.getLatLng();
   const pt = turf.point([ll.lng, ll.lat]);
-  let foundId = null;
+  let found = null;
   for (const b of BOUNDARIES) {
     if (!b.visible) continue;
-    if (turf.booleanPointInPolygon(pt, toGeoJSON(b.coords))) { foundId = b.id; break; }
+    if (turf.booleanPointInPolygon(pt, b.feature)) { found = b; break; }
   }
-  if (foundId && w.insideId === null) {
-    w.insideId = foundId; w.enterTime = new Date(); w.exitTime = null;
+  if (found && w.insideId === null) {
+    w.insideId = found.id; w.enterTime = new Date(); w.exitTime = null;
     setWorkerColor(w, '#22c55e');
-  } else if (!foundId && w.insideId !== null) {
+  } else if (!found && w.insideId !== null) {
     w.exitTime = new Date(); w.insideId = null;
     setWorkerColor(w, '#94a3b8');
   }
@@ -559,9 +432,8 @@ function stopSimulation() {
 playBtn.onclick = playSimulation;
 
 // ---- START ----
-renderBoundaries();
 renderWorkerList();
 updateLoginUI();
-if (authToken) loadDevices();
-else hintEl.textContent = 'Login dulu (panel kiri), kemudian muat devices';
+if (authToken) { loadBoundaries(); loadDevices(); }
+else hintEl.textContent = 'Login dulu (panel kiri), kemudian muat data';
 </script>
