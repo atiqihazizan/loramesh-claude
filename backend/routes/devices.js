@@ -6,6 +6,7 @@ import { requireAgencyAdmin } from '../middleware/auth-role.js';
 import { validateId, validateDeviceCreate } from '../middleware/validation.js';
 import {
   listDevices,
+  listDevicesWithPosition,
   getDeviceById,
   approveDevice,
   createDevice,
@@ -25,6 +26,21 @@ router.get('/', authenticateJwt, async (req, res, next) => {
       agencyIdFilter: req.query.agency_id ? parseInt(req.query.agency_id, 10) : null,
       search: req.query.search,
       approval: req.query.approval || 'approved',
+    });
+    return res.json({ devices });
+  } catch (err) {
+    if (err.status) return res.status(err.status).json({ error: err.message });
+    return next(err);
+  }
+});
+
+// GET /api/devices/with-position — devices + resolved lat/lng (simulator geofence).
+// MESTI sebelum '/:id' supaya tak tersangkut sebagai param id.
+router.get('/with-position', authenticateJwt, async (req, res, next) => {
+  try {
+    const devices = await listDevicesWithPosition({
+      user: req.user,
+      agencyIdFilter: req.query.agency_id ? parseInt(req.query.agency_id, 10) : null,
     });
     return res.json({ devices });
   } catch (err) {

@@ -106,6 +106,90 @@ export async function listDevices({ user, agencyIdFilter, search, approval = 'ap
 }
 
 // =====================================================================
+// LIST + POSITION (untuk simulator geofence — JWT)
+// Static → lat/lng dari `devices`.
+// Non-static → `live_tracking` dahulu; fallback `devices` (posisi awal / last known).
+// Hanya device yang ADA posisi sah dipulangkan. Offline tetap dipapar.
+// =====================================================================
+export async function listDevicesWithPosition({ user, agencyIdFilter }) {
+  const isSuper = user.level.code === ROLES.SUPERADMIN;
+
+  let agencyId = null;
+  if (isSuper) {
+    agencyId = agencyIdFilter || null;
+  } else {
+    agencyId = user.agency?.id;
+    if (!agencyId) {
+      const err = new Error('No agency assigned');
+      err.status = 403;
+      throw err;
+    }
+  }
+
+  const where = { need_approval: false };
+  if (agencyId) {
+    where.device_agencies = { some: { agency_id: agencyId, active: true } };
+  }
+
+  const devices = await prisma.devices.findMany({
+    where,
+    include: {
+      device_type: { select: { id: true, name: true, code: true, icon: true, color_code: true } },
+    },
+    orderBy: { created_at: 'desc' },
+  });
+
+  // Snapshot live untuk device non-static (lat/lng + status_live).
+  const deviceIds = devices.map((d) => d.device_id);
+  const liveRows = await prisma.live_tracking.findMany({
+    where: { device_id: { in: deviceIds } },
+    select: { device_id: true, latitude: true, longitude: true, status_live: true },
+  });
+  const liveMap = new Map(liveRows.map((r) => [r.device_id, r]));
+
+  const isValidCoord = (lat, lng) => {
+    const la = Number(lat);
+    const ln = Number(lng);
+    return Number.isFinite(la) && Number.isFinite(ln) &&
+      la >= -90 && la <= 90 && ln >= -180 && ln <= 180;
+  };
+
+  const out = [];
+  for (const d of devices) {
+    const live = liveMap.get(d.device_id);
+
+    // Resolusi posisi ikut jenis device.
+    let lat = null, lng = null, posSource = null;
+    if (d.is_static) {
+      if (isValidCoord(d.latitude, d.longitude)) {
+        lat = Number(d.latitude); lng = Number(d.longitude); posSource = 'static';
+      }
+    } else if (live && isValidCoord(live.latitude, live.longitude)) {
+      lat = Number(live.latitude); lng = Number(live.longitude); posSource = 'live';
+    } else if (isValidCoord(d.latitude, d.longitude)) {
+      // Belum ada live_tracking — guna posisi dari devices (daftar / last known).
+      lat = Number(d.latitude); lng = Number(d.longitude); posSource = 'device';
+    }
+
+    // Tapis: hanya yang ada posisi sah.
+    if (posSource === null) continue;
+
+    out.push({
+      device_id: d.device_id,
+      name: d.name,
+      type: d.device_type,
+      is_static: d.is_static,
+      status: live?.status_live ?? 'offline',
+      latitude: lat,
+      longitude: lng,
+      pos_source: posSource,   // 'static' | 'live' — untuk debug
+    });
+  }
+
+  return out;
+}
+
+// =====================================================================
 // GET ONE
 // =====================================================================
 
