@@ -17,6 +17,7 @@ import configRoutes      from './config.js';
 import notificationsRoutes from './notifications.js';
 import devicesUserRoutes from './devices-user.js';
 import provisionRoutes from './provision.js';
+import simulatorRoutesRoutes from './simulator-routes.js';
 
 const router = express.Router();
 
@@ -37,5 +38,6 @@ router.use('/config',       configRoutes);
 router.use('/notifications', notificationsRoutes);
 router.use('/devices-user', devicesUserRoutes);
 router.use('/provision',    provisionRoutes);
+router.use('/simulator-routes', simulatorRoutesRoutes);
 
 export default router;

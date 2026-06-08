@@ -486,6 +486,19 @@ model log_mqtt {
 }
 
 // ================================================================
+// SIMULATOR ROUTES — laluan rakaman drag marker (simulator geofencing)
+// ================================================================
+model simulator_routes {
+  id         Int      @id @default(autoincrement())
+  device_id  String   @unique @db.VarChar(100)
+  route      Json                                     // [[lat,lng], ...]
+  created_at DateTime @default(now()) @db.Timestamp(0)
+  updated_at DateTime @updatedAt      @db.Timestamp(0)
+
+  @@index([device_id], map: "idx_simulator_routes_device_id")
+}
+
+// ================================================================
 // PLAYBACK (dynamic tables, NOT in Prisma schema)
 // ================================================================
 // Table name pattern: playback_{sanitized_device_id}
