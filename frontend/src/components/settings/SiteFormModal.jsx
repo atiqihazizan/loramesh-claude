@@ -1,5 +1,4 @@
 // E3-f — create / edit monitoring site modal
-// TODO: boundary file upload — needs backend upload endpoint
 
 import { useState } from 'react';
 import { X } from 'lucide-react';
@@ -156,8 +155,6 @@ export default function SiteFormModal({
             />
             Published on map
           </label>
-
-          {/* TODO: boundary file upload — needs backend upload endpoint */}
 
           <div className="flex justify-end gap-2 pt-2">
             <button type="button" className="btn-secondary" onClick={onClose}>

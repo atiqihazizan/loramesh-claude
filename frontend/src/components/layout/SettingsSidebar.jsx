@@ -8,6 +8,7 @@ import {
   Cpu,
   Gauge,
   MapPinned,
+  Pentagon,
   Shapes,
   UserCircle,
   Users,
@@ -46,6 +47,10 @@ export default function SettingsSidebar({ onNavigate }) {
           <NavLink to="/settings/sites" onClick={onNavigate} className={settingsLinkClass}>
             <MapPinned size={18} className="shrink-0" />
             <span className="text-sm font-medium">Sites</span>
+          </NavLink>
+          <NavLink to="/settings/boundaries" onClick={onNavigate} className={settingsLinkClass}>
+            <Pentagon size={18} className="shrink-0" />
+            <span className="text-sm font-medium">Boundaries</span>
           </NavLink>
           <NavLink to="/settings/users" onClick={onNavigate} className={settingsLinkClass}>
             <Users size={18} className="shrink-0" />

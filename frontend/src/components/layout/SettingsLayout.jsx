@@ -18,6 +18,7 @@ function SettingsRoleGuard() {
     '/settings/agency',
     '/settings/devices',
     '/settings/sites',
+    '/settings/boundaries',
     '/settings/users',
   ];
   const superadminPaths = [

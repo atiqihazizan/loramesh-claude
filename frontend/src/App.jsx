@@ -22,6 +22,7 @@ const AgencySettingsPage = lazy(() => import('./pages/settings/AgencySettingsPag
 const UsersPage = lazy(() => import('./pages/settings/UsersPage.jsx'));
 const DevicesPage = lazy(() => import('./pages/settings/DevicesPage.jsx'));
 const SitesPage = lazy(() => import('./pages/settings/SitesPage.jsx'));
+const BoundariesPage = lazy(() => import('./pages/settings/BoundariesPage.jsx'));
 const MyAccountPage = lazy(() => import('./pages/settings/MyAccountPage.jsx'));
 const SensorsPage = lazy(() => import('./pages/settings/SensorsPage.jsx'));
 const DeviceTypesPage = lazy(() => import('./pages/settings/DeviceTypesPage.jsx'));
@@ -94,6 +95,7 @@ export default function App() {
               <Route path="/settings/agency" element={<AgencySettingsPage />} />
               <Route path="/settings/devices" element={<DevicesPage />} />
               <Route path="/settings/sites" element={<SitesPage />} />
+              <Route path="/settings/boundaries" element={<BoundariesPage />} />
               <Route path="/settings/users" element={<UsersPage />} />
               <Route path="/settings/account" element={<MyAccountPage />} />
               <Route path="/settings/agencies" element={<AgenciesPage />} />
