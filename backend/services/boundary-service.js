@@ -65,6 +65,51 @@ function rowToFeature(b) {
   };
 }
 
+/** Pecah GeoJSON upload → senarai { geometry, suggestedName? }. MultiPolygon kekal satu baris. */
+function extractGeometries(geojson) {
+  if (!geojson || typeof geojson !== 'object') {
+    throw err400('geojson tidak sah');
+  }
+
+  const items = [];
+
+  const pushGeometry = (geometry, suggestedName) => {
+    if (!isValidGeometry(geometry)) return;
+    items.push({
+      geometry,
+      suggestedName: typeof suggestedName === 'string' ? suggestedName : undefined,
+    });
+  };
+
+  switch (geojson.type) {
+    case 'GeometryCollection':
+      for (const g of geojson.geometries || []) {
+        pushGeometry(g);
+      }
+      break;
+    case 'FeatureCollection':
+      for (const f of geojson.features || []) {
+        pushGeometry(f?.geometry, f?.properties?.name);
+      }
+      break;
+    case 'Feature':
+      pushGeometry(geojson.geometry, geojson.properties?.name);
+      break;
+    case 'Polygon':
+    case 'MultiPolygon':
+      pushGeometry(geojson);
+      break;
+    default:
+      throw err400(`Jenis GeoJSON tidak disokong: ${geojson.type}`);
+  }
+
+  if (items.length === 0) {
+    throw err400('Tiada Polygon atau MultiPolygon ditemui dalam fail');
+  }
+
+  return items;
+}
+
 export async function listBoundaries(user, agencyIdFilter) {
   const agencyId = resolveAgencyId(user, agencyIdFilter);
 
@@ -158,6 +203,51 @@ export async function updateBoundary(id, patch, user) {
     include: { agency: { select: { id: true, name: true } } },
   });
   return rowToFeature(updated);
+}
+
+export async function uploadBoundaries(payload, user) {
+  const agencyId = resolveAgencyId(user, payload.agency_id);
+  if (!agencyId) {
+    const err = new Error('Cannot resolve agency_id');
+    err.status = 400;
+    throw err;
+  }
+  if (!payload.geojson) {
+    throw err400('geojson diperlukan');
+  }
+
+  const items = extractGeometries(payload.geojson);
+  const prefix = (payload.name_prefix || 'Zon').trim() || 'Zon';
+  const visible = payload.visible ?? true;
+  let autoIndex = 1;
+
+  const features = await prisma.$transaction(async (tx) => {
+    const results = [];
+    for (const item of items) {
+      const name = item.suggestedName?.trim() || `${prefix} ${autoIndex}`;
+      if (!item.suggestedName?.trim()) autoIndex += 1;
+
+      const row = await tx.boundaries.create({
+        data: {
+          agency_id: agencyId,
+          name,
+          visible,
+          coordinates: item.geometry,
+          created_by: user.id,
+          updated_by: user.id,
+        },
+        include: { agency: { select: { id: true, name: true } } },
+      });
+      results.push(rowToFeature(row));
+    }
+    return results;
+  });
+
+  return {
+    created: features.length,
+    type: 'FeatureCollection',
+    features,
+  };
 }
 
 export async function deleteBoundary(id, user) {

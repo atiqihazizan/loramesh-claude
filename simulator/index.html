@@ -204,6 +204,20 @@ function renderBoundaries() {
   renderBoundaryList();
 }
 
+function flyToBoundary(b) {
+  const layer = boundaryLayers[b.id];
+  let bounds;
+  if (layer) {
+    bounds = layer.getBounds();
+  } else {
+    const tmp = L.geoJSON(b.feature);
+    bounds = tmp.getBounds();
+    map.removeLayer(tmp);
+  }
+  if (!bounds.isValid()) return;
+  map.setView(bounds.getCenter(), 18);
+}
+
 function renderBoundaryList() {
   const el = document.getElementById('boundaryList');
   el.innerHTML = '';
@@ -213,12 +227,18 @@ function renderBoundaryList() {
   }
   BOUNDARIES.forEach(b => {
     const row = document.createElement('div');
-    row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:6px 16px';
-    row.innerHTML = '<span style="font-size:13px;color:'+(b.visible?'#0f172a':'#94a3b8')+'">'+b.name+'</span>';
+    row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:6px 16px;gap:8px';
+    const nameBtn = document.createElement('button');
+    nameBtn.type = 'button';
+    nameBtn.textContent = b.name;
+    nameBtn.title = 'Pergi ke boundary (zoom 18)';
+    nameBtn.style.cssText = 'flex:1;text-align:left;font-size:13px;color:'+(b.visible?'#0f172a':'#94a3b8')+';background:none;border:none;padding:0;cursor:pointer';
+    nameBtn.onclick = () => flyToBoundary(b);
+    row.appendChild(nameBtn);
     const btn = document.createElement('button');
     btn.textContent = b.visible ? 'Hide' : 'Show';
-    btn.style.cssText = 'font-size:11px;padding:2px 10px;border:1px solid #cbd5e1;border-radius:6px;background:#fff;color:#475569;cursor:pointer';
-    btn.onclick = () => { b.visible = !b.visible; renderBoundaries(); workers.forEach(checkWorker); };
+    btn.style.cssText = 'font-size:11px;padding:2px 10px;border:1px solid #cbd5e1;border-radius:6px;background:#fff;color:#475569;cursor:pointer;flex-shrink:0';
+    btn.onclick = (e) => { e.stopPropagation(); b.visible = !b.visible; renderBoundaries(); workers.forEach(checkWorker); };
     row.appendChild(btn);
     el.appendChild(row);
   });
