@@ -1,0 +1,404 @@
+<div id="app" style="display:flex;height:100vh;font-family:system-ui,-apple-system,sans-serif;background:#f1f5f9">
+  <div style="width:320px;background:#fff;border-right:1px solid #e2e8f0;display:flex;flex-direction:column">
+    <div style="padding:16px;border-bottom:1px solid #e2e8f0">
+      <div style="font-size:18px;font-weight:700;color:#0f172a">GeoSite</div>
+      <div style="font-size:12px;color:#64748b">Demo Geofencing</div>
+    </div>
+
+    <div style="padding:12px;display:flex;gap:8px;flex-wrap:wrap">
+      <button id="addWorkerBtn" style="flex:1;padding:10px;border:none;border-radius:8px;background:#2563eb;color:#fff;font-weight:600;font-size:13px;cursor:pointer">+ Tambah Pekerja</button>
+      <button id="drawBtn" style="padding:10px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;color:#475569;font-size:13px;cursor:pointer">+ Boundary</button>
+      <button id="copyBtn" style="width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;color:#94a3b8;font-size:12px;cursor:pointer" disabled>Salin kod boundary / laluan</button>
+      <button id="playBtn" style="width:100%;padding:10px;border:none;border-radius:8px;background:#7c3aed;color:#fff;font-weight:600;font-size:13px;cursor:pointer">Play Simulasi</button>
+    </div>
+
+    <div style="padding:8px 16px;font-size:12px;font-weight:600;color:#475569">SENARAI PEKERJA</div>
+    <div id="workerList" style="flex:1;overflow-y:auto"></div>
+
+    <div style="border-top:1px solid #e2e8f0">
+      <div style="padding:8px 16px;font-size:12px;font-weight:600;color:#475569">BOUNDARY (klik di peta untuk edit)</div>
+      <div id="boundaryList" style="max-height:160px;overflow-y:auto;padding-bottom:8px"></div>
+    </div>
+  </div>
+
+  <div style="flex:1;position:relative">
+    <div id="map" style="height:100%;width:100%"></div>
+    <div id="hint" style="position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:1000;background:rgba(15,23,42,.85);color:#fff;padding:8px 16px;border-radius:20px;font-size:13px;pointer-events:none">
+      Klik boundary untuk edit, atau drag pekerja masuk/keluar kawasan
+    </div>
+  </div>
+</div>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Turf.js/6.5.0/turf.min.js"></script>
+
+<script>
+// =========================================================
+//  BOUNDARY HARDCODE  |  coords: [lat, lng]  |  visible: show/hide
+// =========================================================
+const BOUNDARIES = [
+  {
+    id: 1,
+    name: "SMK Seksyen 3 BK",
+    visible: true,
+    coords: [
+      [3.037926, 101.640846],
+      [3.037926, 101.641801],
+      [3.038103, 101.642262],
+      [3.038510, 101.642804],
+      [3.039217, 101.642284],
+      [3.039651, 101.641935],
+      [3.039897, 101.641785],
+      [3.040428, 101.641619],
+      [3.040438, 101.641442],
+      [3.040213, 101.641281],
+      [3.040053, 101.641034],
+      [3.040026, 101.640835],
+      [3.037926, 101.640851]
+    ]
+  },
+  {
+    id: 2,
+    name: "Masjid Al Ehsan BK",
+    visible: true,
+    coords: [
+      [3.045769, 101.644371],
+      [3.045779, 101.645406],
+      [3.044510, 101.645427],
+      [3.044494, 101.644446],
+      [3.045769, 101.644381]
+    ]
+  }
+];
+// =========================================================
+//  LALUAN HARDCODE untuk Play Simulasi  |  points: [lat, lng]
+//  Drag pekerja untuk rakam laluan, kemudian Salin & tampal di sini.
+// =========================================================
+const ROUTES = [
+  // { name: "Pekerja 1", points: [ [3.0385,101.6395], [3.0390,101.6410] ] },
+];
+// =========================================================
+
+let workers = [];
+let nextWorkerId = 1;
+let nextBoundaryId = 100;
+const boundaryLayers = {};   // id -> L.Polygon
+
+let editingId = null;
+let editHandles = [];
+
+// ---- INIT MAP ----
+const map = L.map('map').setView([3.0414218086159095, 101.65173083605691], 17);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '(c) OpenStreetMap'
+}).addTo(map);
+
+const hintEl = document.getElementById('hint');
+const drawBtn = document.getElementById('drawBtn');
+const copyBtn = document.getElementById('copyBtn');
+
+function toGeoJSON(coords) {
+  const ring = coords.map(c => [c[1], c[0]]);
+  if (ring.length && (ring[0][0] !== ring[ring.length-1][0] || ring[0][1] !== ring[ring.length-1][1])) {
+    ring.push(ring[0]);
+  }
+  return turf.polygon([ring]);
+}
+
+// ---- RENDER BOUNDARY ----
+function renderBoundaries() {
+  Object.values(boundaryLayers).forEach(l => map.removeLayer(l));
+  for (const b of BOUNDARIES) {
+    if (!b.visible) continue;
+    const layer = L.polygon(b.coords, { color:'#3b82f6', weight:2, fillOpacity:0.1 })
+      .addTo(map).bindTooltip(b.name);
+    layer.on('click', (e) => { L.DomEvent.stopPropagation(e); enterEditMode(b.id); });
+    boundaryLayers[b.id] = layer;
+  }
+  renderBoundaryList();
+}
+
+function renderBoundaryList() {
+  const el = document.getElementById('boundaryList');
+  el.innerHTML = '';
+  BOUNDARIES.forEach(b => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:6px 16px';
+    const editing = b.id === editingId;
+    row.innerHTML = '<span style="font-size:13px;color:'+(b.visible?(editing?'#f59e0b':'#0f172a'):'#94a3b8')+';font-weight:'+(editing?'700':'400')+'">'+b.name+'</span>';
+    const btn = document.createElement('button');
+    btn.textContent = b.visible ? 'Hide' : 'Show';
+    btn.style.cssText = 'font-size:11px;padding:2px 10px;border:1px solid #cbd5e1;border-radius:6px;background:#fff;color:#475569;cursor:pointer';
+    btn.onclick = () => { b.visible = !b.visible; if (editingId===b.id) exitEditMode(); renderBoundaries(); workers.forEach(checkWorker); };
+    row.appendChild(btn);
+    el.appendChild(row);
+  });
+}
+
+// ---- MOD EDIT BOUNDARY ----
+function vertexIcon() {
+  return L.divIcon({ className:'', html:'<div style="width:14px;height:14px;border-radius:50%;background:#f59e0b;border:2px solid #fff;box-shadow:0 0 3px rgba(0,0,0,.5)"></div>', iconSize:[14,14], iconAnchor:[7,7] });
+}
+
+function enterEditMode(id) {
+  if (drawing) return;
+  exitEditMode();
+  const b = BOUNDARIES.find(x => x.id === id);
+  if (!b || !b.visible) return;
+  editingId = id;
+  boundaryLayers[id].setStyle({ color:'#f59e0b', weight:3 });
+
+  b.coords.forEach((c, i) => {
+    const h = L.marker(c, { draggable:true, icon: vertexIcon() }).addTo(map);
+    h.on('drag', () => {
+      const ll = h.getLatLng();
+      b.coords[i] = [ll.lat, ll.lng];
+      boundaryLayers[id].setLatLngs(b.coords);
+      workers.forEach(checkWorker);
+    });
+    h.on('dragend', () => setCopyTarget(b));
+    editHandles.push(h);
+  });
+
+  setCopyTarget(b);
+  renderBoundaryList();
+  hintEl.textContent = 'Edit "'+b.name+'": drag bucu kuning. Klik peta kosong untuk selesai.';
+}
+
+function exitEditMode() {
+  editHandles.forEach(h => map.removeLayer(h));
+  editHandles = [];
+  if (editingId != null && boundaryLayers[editingId]) {
+    boundaryLayers[editingId].setStyle({ color:'#3b82f6', weight:2 });
+  }
+  editingId = null;
+  renderBoundaryList();
+}
+
+// ---- SALIN KOD ----
+let lastSnippet = '';
+function snippetFor(b) {
+  const coordsStr = b.coords.map(p => '    [' + p[0].toFixed(6) + ', ' + p[1].toFixed(6) + ']').join(',\n');
+  return '{\n  id: ' + b.id + ',\n  name: "' + b.name + '",\n  visible: ' + b.visible + ',\n  coords: [\n' + coordsStr + '\n  ]\n},';
+}
+function setCopyTarget(b) {
+  lastSnippet = snippetFor(b);
+  copyBtn.disabled = false;
+  copyBtn.style.color = '#16a34a';
+  copyBtn.style.borderColor = '#16a34a';
+  copyBtn.textContent = 'Salin kod "' + b.name + '"';
+}
+copyBtn.onclick = () => {
+  if (!lastSnippet) return;
+  console.log(lastSnippet);
+  const done = () => { const o = copyBtn.textContent; copyBtn.textContent = 'Berjaya disalin!'; setTimeout(()=>copyBtn.textContent=o,1500); };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(lastSnippet).then(done).catch(()=>fallbackCopy(lastSnippet,done));
+  } else { fallbackCopy(lastSnippet, done); }
+};
+function fallbackCopy(text, cb) {
+  const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta);
+  ta.select(); try { document.execCommand('copy'); } catch(e){} document.body.removeChild(ta); cb();
+}
+
+// ---- DRAW BOUNDARY BARU ----
+let drawing = false, drawPts = [], tempLine = null, tempDots = [];
+function startDraw() {
+  exitEditMode();
+  drawing = true; drawPts = [];
+  drawBtn.textContent = 'Siap (klik selesai)';
+  drawBtn.style.background = '#16a34a'; drawBtn.style.color = '#fff'; drawBtn.style.borderColor = '#16a34a';
+  document.getElementById('map').style.cursor = 'crosshair';
+  map.doubleClickZoom.disable();
+  hintEl.textContent = 'Klik atas peta untuk letak titik (min 3), kemudian tekan Siap';
+}
+function finishDraw() {
+  drawing = false;
+  document.getElementById('map').style.cursor = '';
+  map.doubleClickZoom.enable();
+  drawBtn.textContent = '+ Boundary';
+  drawBtn.style.background = '#fff'; drawBtn.style.color = '#475569'; drawBtn.style.borderColor = '#cbd5e1';
+  hintEl.textContent = 'Klik boundary untuk edit, atau drag pekerja masuk/keluar kawasan';
+  clearTemp();
+  if (drawPts.length >= 3) {
+    const name = prompt('Nama boundary:') || ('Boundary ' + nextBoundaryId);
+    const b = { id: nextBoundaryId++, name, visible: true, coords: drawPts.slice() };
+    BOUNDARIES.push(b);
+    renderBoundaries(); workers.forEach(checkWorker);
+    setCopyTarget(b);
+  } else if (drawPts.length > 0) {
+    alert('Perlu sekurang-kurangnya 3 titik.');
+  }
+  drawPts = [];
+}
+function clearTemp() {
+  if (tempLine) { map.removeLayer(tempLine); tempLine = null; }
+  tempDots.forEach(d => map.removeLayer(d)); tempDots = [];
+}
+function redrawTemp() {
+  clearTemp();
+  drawPts.forEach(p => tempDots.push(L.circleMarker(p, { radius:5, color:'#16a34a', fillColor:'#16a34a', fillOpacity:1 }).addTo(map)));
+  if (drawPts.length >= 2) tempLine = L.polyline(drawPts, { color:'#16a34a', dashArray:'5,5' }).addTo(map);
+}
+drawBtn.onclick = () => { drawing ? finishDraw() : startDraw(); };
+
+map.on('click', (e) => {
+  if (drawing) { drawPts.push([e.latlng.lat, e.latlng.lng]); redrawTemp(); return; }
+  if (editingId != null) {
+    exitEditMode();
+    hintEl.textContent = 'Klik boundary untuk edit, atau drag pekerja masuk/keluar kawasan';
+  }
+});
+
+// ---- PEKERJA ----
+function workerIcon(color, id) {
+  return L.divIcon({ className:'', html:'<div class="worker-dot" style="width:22px;height:22px;border-radius:50%;background:'+color+';border:3px solid #fff;box-shadow:0 0 6px rgba(0,0,0,.4);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center">'+id+'</div>', iconSize:[22,22], iconAnchor:[11,11] });
+}
+function setWorkerColor(w, color) {
+  const el = w.marker.getElement();
+  if (el) { const d = el.querySelector('.worker-dot'); if (d) d.style.background = color; }
+}
+function addWorker(latlng) {
+  const id = nextWorkerId++;
+  const name = 'Pekerja ' + id;
+  const marker = L.marker(latlng, { draggable:true, icon: workerIcon('#94a3b8', id) }).addTo(map).bindTooltip(name);
+  const w = { id, name, marker, insideId:null, enterTime:null, exitTime:null, route:[], _lastRec:0, _raf:null };
+
+  marker.on('dragstart', () => { w.route = [[+marker.getLatLng().lat.toFixed(6), +marker.getLatLng().lng.toFixed(6)]]; w._lastRec = Date.now(); });
+  marker.on('drag', () => {
+    checkWorker(w);
+    const now = Date.now();
+    if (now - w._lastRec > 100) {        // rakam setiap 100ms
+      const ll = marker.getLatLng();
+      w.route.push([+ll.lat.toFixed(6), +ll.lng.toFixed(6)]);
+      w._lastRec = now;
+    }
+  });
+  marker.on('dragend', () => {
+    checkWorker(w);
+    const ll = marker.getLatLng();
+    w.route.push([+ll.lat.toFixed(6), +ll.lng.toFixed(6)]);
+    if (w.route.length >= 2) setRouteCopyTarget(w);
+  });
+
+  workers.push(w); renderWorkerList(); checkWorker(w);
+  return w;
+}
+document.getElementById('addWorkerBtn').onclick = () => { const c = map.getCenter(); addWorker([c.lat, c.lng]); };
+
+// ---- POINT IN POLYGON ----
+function checkWorker(w) {
+  const ll = w.marker.getLatLng();
+  const pt = turf.point([ll.lng, ll.lat]);
+  let foundId = null;
+  for (const b of BOUNDARIES) {
+    if (!b.visible) continue;
+    if (turf.booleanPointInPolygon(pt, toGeoJSON(b.coords))) { foundId = b.id; break; }
+  }
+  if (foundId && w.insideId === null) {
+    w.insideId = foundId; w.enterTime = new Date(); w.exitTime = null;
+    setWorkerColor(w, '#22c55e');
+  } else if (!foundId && w.insideId !== null) {
+    w.exitTime = new Date(); w.insideId = null;
+    setWorkerColor(w, '#94a3b8');
+  }
+  renderWorkerList();
+}
+
+// ---- SIDEBAR PEKERJA ----
+function fmt(d){ return d ? d.toLocaleTimeString('ms-MY',{hour:'2-digit',minute:'2-digit',second:'2-digit'}) : '-'; }
+function durationStr(start){ const s=Math.floor((Date.now()-start)/1000); const m=Math.floor(s/60); return (m>0?m+'m ':'')+(s%60)+'s'; }
+function renderWorkerList() {
+  const el = document.getElementById('workerList');
+  if (workers.length === 0) { el.innerHTML = '<div style="padding:16px;color:#94a3b8;font-size:13px;text-align:center">Tiada pekerja.</div>'; return; }
+  el.innerHTML = '';
+  workers.forEach(w => {
+    const inside = w.insideId !== null;
+    const color = inside ? '#22c55e' : '#94a3b8';
+    const siteName = inside ? (BOUNDARIES.find(b=>b.id===w.insideId)?.name || '') : '';
+    let subtitle;
+    if (inside) subtitle = 'Masuk: '+fmt(w.enterTime)+' | <span class="dur" data-id="'+w.id+'" style="color:#16a34a;font-weight:600">'+durationStr(w.enterTime)+'</span>';
+    else if (w.exitTime) subtitle = 'Keluar: '+fmt(w.exitTime);
+    else subtitle = 'Belum masuk kawasan';
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid #f1f5f9;cursor:pointer';
+    row.innerHTML = '<div style="width:12px;height:12px;border-radius:50%;background:'+color+';flex-shrink:0"></div>'+
+      '<div style="flex:1;min-width:0"><div style="font-weight:600;color:#0f172a;font-size:14px">'+w.name+
+      (inside?' <span style="font-size:11px;color:#16a34a">- '+siteName+'</span>':'')+'</div>'+
+      '<div style="font-size:11px;color:#64748b">'+subtitle+'</div></div>';
+    row.onclick = () => map.panTo(w.marker.getLatLng());
+    el.appendChild(row);
+  });
+}
+
+setInterval(() => {
+  workers.forEach(w => { if (w.insideId !== null) { const s = document.querySelector('.dur[data-id="'+w.id+'"]'); if (s) s.textContent = durationStr(w.enterTime); } });
+}, 1000);
+
+// ---- SALIN LALUAN PEKERJA ----
+function setRouteCopyTarget(w) {
+  const pts = w.route.map(p => '    [' + p[0] + ', ' + p[1] + ']').join(',\n');
+  lastSnippet = '{\n  name: "' + w.name + '",\n  points: [\n' + pts + '\n  ]\n},';
+  copyBtn.disabled = false;
+  copyBtn.style.color = '#7c3aed';
+  copyBtn.style.borderColor = '#7c3aed';
+  copyBtn.textContent = 'Salin laluan "' + w.name + '" (' + w.route.length + ' titik)';
+}
+
+// ---- PLAY SIMULASI ----
+const playBtn = document.getElementById('playBtn');
+let playing = false;
+let playedWorkers = [];
+
+function animateRoute(w, points) {
+  let seg = 0, t = 0;
+  const stepT = 0.04;   // laju pergerakan (kecil = perlahan & smooth)
+  function frame() {
+    if (seg >= points.length - 1) { w._raf = null; return; }
+    const a = points[seg], b = points[seg+1];
+    const lat = a[0] + (b[0]-a[0])*t;
+    const lng = a[1] + (b[1]-a[1])*t;
+    w.marker.setLatLng([lat, lng]);
+    checkWorker(w);
+    t += stepT;
+    if (t >= 1) { t = 0; seg++; }
+    w._raf = requestAnimationFrame(frame);
+  }
+  frame();
+}
+
+function playSimulation() {
+  if (playing) { stopSimulation(); return; }
+  if (ROUTES.length === 0) {
+    alert('Tiada laluan dalam ROUTES.\n\nDrag pekerja untuk rakam laluan, tekan Salin, kemudian tampal kod ke array ROUTES di atas.');
+    return;
+  }
+  playing = true;
+  playBtn.textContent = 'Stop Simulasi';
+  playBtn.style.background = '#dc2626';
+  playedWorkers = [];
+  ROUTES.forEach(r => {
+    if (!r.points || r.points.length < 2) return;
+    let w = workers.find(x => x.name === r.name) || addWorker(r.points[0]);
+    w.marker.setLatLng(r.points[0]); checkWorker(w);
+    playedWorkers.push(w);
+    animateRoute(w, r.points);
+  });
+}
+
+function stopSimulation() {
+  playing = false;
+  playedWorkers.forEach(w => { if (w._raf) { cancelAnimationFrame(w._raf); w._raf = null; } });
+  playBtn.textContent = 'Play Simulasi';
+  playBtn.style.background = '#7c3aed';
+}
+playBtn.onclick = playSimulation;
+
+// ---- START ----
+renderBoundaries();
+renderWorkerList();
+addWorker([3.038500, 101.639500]);
+addWorker([3.045000, 101.647000]);
+addWorker([3.041500, 101.643500]);
+</script>
