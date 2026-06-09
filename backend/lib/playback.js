@@ -281,6 +281,7 @@ export async function queryPlayback(deviceId, from, to, opts = {}) {
 
   return rows.map((r) => ({
     ...r,
+    id: r.id != null ? Number(r.id) : null,
     sensor_data:
       typeof r.sensor_data === 'string' ? safeJsonParse(r.sensor_data) : r.sensor_data,
   }));

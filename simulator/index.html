@@ -563,7 +563,8 @@ let playedWorkers = [];
 
 function animateRoute(w, points) {
   let seg = 0, t = 0;
-  const stepT = 0.04;
+  // const stepT = 0.04;
+  const stepT = 0.5;
   function frame() {
     if (seg >= points.length - 1) { w._raf = null; return; }
     const a = points[seg], b = points[seg + 1];
