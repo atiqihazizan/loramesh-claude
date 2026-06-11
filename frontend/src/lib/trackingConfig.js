@@ -11,8 +11,10 @@
 // ----------------------------------------------------------------
 
 export const TRACKING_DEFAULTS = {
-  zoomMoving: 17,
-  zoomStopped: 15,
+  // zoomMoving: 17,
+  // zoomStopped: 15,
+  zoomMoving: 18,
+  zoomStopped: 18,
   stopRadiusM: 10,
 };
 

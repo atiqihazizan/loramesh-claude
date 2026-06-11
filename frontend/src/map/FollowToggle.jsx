@@ -17,7 +17,8 @@ import { useMapContext } from './MapContext.jsx';
 import { useDevices } from '../hooks/useDevices.js';
 
 export default function FollowToggle() {
-  const { followMode, setFollowMode, selectedDeviceId } = useMapContext();
+  const { followMode, setFollowMode, selectedDeviceId, setDetailPanelMinimized } =
+    useMapContext();
   const { devices } = useDevices();
 
   // Selected device — to check is_static.
@@ -41,7 +42,9 @@ export default function FollowToggle() {
 
   const handleClick = () => {
     if (disabled) return;
-    setFollowMode((v) => !v);
+    const next = !followMode;
+    setFollowMode(next);
+    if (next) setDetailPanelMinimized(true);
   };
 
   const title =

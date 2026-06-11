@@ -94,7 +94,7 @@ export default function MapTopOverlay() {
       </div>
 
       {/* Kepingan kanan — KAD GABUNGAN: agency | basemap | profil */}
-      <div className="absolute right-3 top-3 z-20">
+      <div className="absolute right-3 top-3 z-[1000]">
         <div
           className="flex items-center gap-1 rounded-xl bg-white/95 p-1
                      shadow-lg ring-1 ring-slate-200 backdrop-blur"

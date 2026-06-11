@@ -43,6 +43,9 @@ export function MapProvider({ children }) {
   // map follows that device's position on each socket update.
   const [followMode, setFollowMode] = useState(false);
 
+  // Device detail panel minimized (shared with FollowToggle).
+  const [detailPanelMinimized, setDetailPanelMinimized] = useState(false);
+
   // Set of device_type codes that are HIDDEN (type filter).
   const [hiddenTypeCodes, setHiddenTypeCodes] = useState(() => new Set());
 
@@ -84,6 +87,7 @@ export function MapProvider({ children }) {
     setSelectedDeviceId(null);
     setHiddenTypeCodes(new Set());
     setFollowMode(false);
+    setDetailPanelMinimized(false);
   }, [selectedAgencyId]);
 
   // E2-markers-b: activate the realtime device socket. Pass
@@ -109,6 +113,8 @@ export function MapProvider({ children }) {
       toggleTypeCode,
       followMode,
       setFollowMode,
+      detailPanelMinimized,
+      setDetailPanelMinimized,
       flyTo,
       flyToTarget,
     }),
@@ -125,6 +131,7 @@ export function MapProvider({ children }) {
       hiddenTypeCodes,
       toggleTypeCode,
       followMode,
+      detailPanelMinimized,
       flyTo,
       flyToTarget,
     ],
