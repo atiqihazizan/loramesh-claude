@@ -5,14 +5,34 @@
 // E2-shell-fix: tidak lagi panggil useMapData. Data peta dimiliki
 // MapLayout (melalui MapProvider). MapPage cuma baca keadaan
 // loading/error dari context dan render MapView.
+//
+// URL param ?device=XXX → auto-focus device bila page dimuatkan.
 // ----------------------------------------------------------------
 
+import { useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useMapContext } from '../map/MapContext.jsx';
+import { useDevices } from '../hooks/useDevices.js';
 import MapView from '../map/MapView.jsx';
 import { errMsg } from '../lib/api.js';
 
 export default function MapPage() {
-  const { isLoading, isError, error } = useMapContext();
+  const { isLoading, isError, error, setSelectedDeviceId, flyTo } = useMapContext();
+  const { devices } = useDevices();
+  const [searchParams] = useSearchParams();
+  const deviceParam = searchParams.get('device');
+  const didFocus = useRef(false);
+
+  useEffect(() => {
+    if (!deviceParam || didFocus.current) return;
+    const d = devices.find((dev) => dev.device_id === deviceParam);
+    if (!d) return;
+    didFocus.current = true;
+    setSelectedDeviceId(d.device_id);
+    if (typeof d.latitude === 'number' && typeof d.longitude === 'number') {
+      flyTo(d.longitude, d.latitude, 19);
+    }
+  }, [deviceParam, devices, setSelectedDeviceId, flyTo]);
 
   // --- Loading ---------------------------------------------------
   if (isLoading) {
