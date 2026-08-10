@@ -16,8 +16,10 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { useMapData } from '../hooks/useMapData.js';
+import { useAgencies } from '../hooks/useAgencies.js';
 import { useDeviceSocket } from '../hooks/useDeviceSocket.js';
 import { useAuthStore } from '../store/authStore.js';
+import { parseLatLng, matchTileProvider, FALLBACK_ZOOM } from '../lib/mapConfig.js';
 
 const MapContext = createContext(null);
 
@@ -29,6 +31,9 @@ export function MapProvider({ children }) {
     useMapData();
 
   const userAgencyId = useAuthStore((s) => s.user?.agency?.id ?? null);
+
+  // Agencies list — shared cache with AgencyPicker (no extra fetch).
+  const { agencies } = useAgencies();
 
   // Active basemap tile — lifted here so it is shared.
   const [activeTile, setActiveTile] = useState(null);
@@ -89,6 +94,29 @@ export function MapProvider({ children }) {
     setFollowMode(false);
     setDetailPanelMinimized(false);
   }, [selectedAgencyId]);
+
+  // Agency change → fly map to that agency's configured center + tile.
+  // agencies list is superadmin-only (empty for other roles → no-op).
+  useEffect(() => {
+    if (!selectedAgencyId || agencies.length === 0) return;
+    const agency = agencies.find((a) => a.id === selectedAgencyId);
+    if (!agency?.default_map_center) return;
+
+    const center = parseLatLng(agency.default_map_center);
+    if (!center) return;
+
+    setFlyToTarget({
+      lng: center[0],
+      lat: center[1],
+      zoom: agency.default_map_zoom ?? FALLBACK_ZOOM,
+      nonce: Date.now(),
+    });
+
+    if (agency.default_tile_provider && tiles.length > 0) {
+      const tile = matchTileProvider(agency.default_tile_provider, tiles);
+      if (tile) setActiveTile(tile);
+    }
+  }, [selectedAgencyId, agencies, tiles]);
 
   // E2-markers-b: activate the realtime device socket. Pass
   // selectedAgencyId as an argument (not via context) to avoid a
