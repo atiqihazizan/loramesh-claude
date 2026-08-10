@@ -67,8 +67,12 @@ export function isRasterTile(url) {
 export function matchTileProvider(provider, tiles) {
   if (!Array.isArray(tiles) || tiles.length === 0) return null;
 
-  const key = (provider || '').toLowerCase().trim();
+  // Direct match by name first — covers new tiles like "Google Terrain"
+  const direct = tiles.find((t) => t.name === provider);
+  if (direct) return direct;
 
+  // Legacy fuzzy match for old stored values like "osm", "satellite", "terrain"
+  const key = (provider || '').toLowerCase().trim();
   let wanted = 'Roadmap';
   if (['satelit', 'satellite', 'sat'].includes(key)) wanted = 'Satellite';
   else if (['terrain', 'topo'].includes(key)) wanted = 'Terrain';
