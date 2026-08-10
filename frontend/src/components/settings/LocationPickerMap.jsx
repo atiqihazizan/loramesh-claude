@@ -38,6 +38,7 @@ async function searchPlace(q) {
 }
 
 function toCoord(v) {
+  if (v === '' || v == null) return null;
   const n = Number(v);
   return Number.isFinite(n) ? n : null;
 }
