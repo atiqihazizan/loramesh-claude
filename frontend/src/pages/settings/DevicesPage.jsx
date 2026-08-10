@@ -7,6 +7,7 @@ import { errMsg } from '../../lib/api.js';
 import { useAuthStore } from '../../store/authStore.js';
 import { useAgencies } from '../../hooks/useAgencies.js';
 import { useAgencyDevices } from '../../hooks/useAgencyDevices.js';
+import { useAgencySettings } from '../../hooks/useAgencySettings.js';
 import SettingsPageHeader from '../../components/settings/SettingsPageHeader.jsx';
 import SettingsSection from '../../components/settings/SettingsSection.jsx';
 import SuperadminAgencyPicker from '../../components/settings/SuperadminAgencyPicker.jsx';
@@ -17,7 +18,6 @@ import DeviceFormModal from '../../components/settings/DeviceFormModal.jsx';
 export default function DevicesPage() {
   const isAgencyAdmin = useAuthStore((s) => s.isAgencyAdmin());
   const isSuperadmin = useAuthStore((s) => s.isSuperadmin());
-  const userAgency = useAuthStore((s) => s.user?.agency);
   const { agencies, isLoading: agenciesLoading } = useAgencies();
   const [superadminAgencyId, setSuperadminAgencyId] = useState(null);
   const [search, setSearch] = useState('');
@@ -26,9 +26,9 @@ export default function DevicesPage() {
     ? superadminAgencyId ?? agencies[0]?.id ?? null
     : undefined;
 
-  const agencyMapCenter = isSuperadmin
-    ? (agencies.find((a) => a.id === agencyTargetId)?.default_map_center ?? null)
-    : (userAgency?.default_map_center ?? null);
+  const { agency: agencySettings } = useAgencySettings(agencyTargetId);
+
+  const agencyMapCenter = agencySettings?.default_map_center ?? null;
 
   const {
     devices,
