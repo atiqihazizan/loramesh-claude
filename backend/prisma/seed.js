@@ -29,6 +29,30 @@ const TILES = [
     url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
     theme: 'light',
   },
+  {
+    name: 'Google Roadmap',
+    icon: 'map',
+    url: 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
+    theme: 'light',
+  },
+  {
+    name: 'Google Satellite',
+    icon: 'satellite',
+    url: 'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
+    theme: 'dark',
+  },
+  {
+    name: 'Google Hybrid',
+    icon: 'layers',
+    url: 'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+    theme: 'dark',
+  },
+  {
+    name: 'Google Terrain',
+    icon: 'mountain',
+    url: 'https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}',
+    theme: 'light',
+  },
 ];
 
 // ============================================
