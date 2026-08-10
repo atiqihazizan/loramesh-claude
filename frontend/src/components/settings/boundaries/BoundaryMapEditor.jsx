@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import Map, { Source, Layer, Marker, useMap } from 'react-map-gl/maplibre';
 import { api } from '../../../lib/api.js';
 import { buildMapStyle } from '../../../lib/mapStyle.js';
-import { FALLBACK_CENTER, FALLBACK_ZOOM } from '../../../lib/mapConfig.js';
+import { FALLBACK_CENTER, FALLBACK_ZOOM, parseLatLng } from '../../../lib/mapConfig.js';
 
 async function fetchTiles() {
   const res = await api.get('/tiles');
@@ -149,6 +149,7 @@ export default function BoundaryMapEditor({
   onVertexDrag,
   flyToTarget = null,
   modeKey = 'view',
+  agencyCenter = null,
 }) {
   const tilesQuery = useQuery({
     queryKey: ['tiles'],
@@ -183,11 +184,14 @@ export default function BoundaryMapEditor({
 
   return (
     <Map
-      initialViewState={{
-        longitude: FALLBACK_CENTER[0],
-        latitude: FALLBACK_CENTER[1],
-        zoom: FALLBACK_ZOOM,
-      }}
+      initialViewState={(() => {
+        const parsed = parseLatLng(agencyCenter);
+        return {
+          longitude: parsed?.[0] ?? FALLBACK_CENTER[0],
+          latitude: parsed?.[1] ?? FALLBACK_CENTER[1],
+          zoom: FALLBACK_ZOOM,
+        };
+      })()}
       mapStyle={mapStyle}
       attributionControl={{ compact: true }}
       style={{ width: '100%', height: '100%', cursor }}

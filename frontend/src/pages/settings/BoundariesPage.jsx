@@ -17,6 +17,7 @@ import { errMsg } from '../../lib/api.js';
 import { useAuthStore } from '../../store/authStore.js';
 import { useAgencies } from '../../hooks/useAgencies.js';
 import { useAgencyBoundaries } from '../../hooks/useAgencyBoundaries.js';
+import { useAgencySettings } from '../../hooks/useAgencySettings.js';
 import SettingsPageHeader from '../../components/settings/SettingsPageHeader.jsx';
 import SuperadminAgencyPicker from '../../components/settings/SuperadminAgencyPicker.jsx';
 import ConfirmDialog from '../../components/settings/ConfirmDialog.jsx';
@@ -38,6 +39,9 @@ export default function BoundariesPage() {
   const agencyTargetId = isSuperadmin
     ? superadminAgencyId ?? agencies[0]?.id ?? null
     : undefined;
+
+  const { agency: agencySettings } = useAgencySettings(agencyTargetId);
+  const agencyMapCenter = agencySettings?.default_map_center ?? null;
 
   const {
     features,
@@ -420,6 +424,7 @@ export default function BoundariesPage() {
 
           <div className="flex-1 relative min-h-[280px] min-w-0">
             <BoundaryMapEditor
+              key={agencyTargetId ?? 'default'}
               mode={mode}
               displayFeatures={displayFeatures}
               draftPoints={draftPoints}
@@ -428,6 +433,7 @@ export default function BoundariesPage() {
               onVertexDrag={isPolygonEditable ? handleVertexDrag : undefined}
               flyToTarget={flyToTarget}
               modeKey={modeKey}
+              agencyCenter={agencyMapCenter}
             />
             {mode === 'create' ? (
               <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 rounded-full bg-slate-900/85 text-white text-xs px-4 py-2 pointer-events-none">
