@@ -4,7 +4,7 @@
 import express from 'express';
 import { authenticateJwt } from '../middleware/auth-jwt.js';
 import { requireSuperadmin } from '../middleware/auth-role.js';
-import { validateId } from '../middleware/validation.js';
+import { validateId, validateTileCreate, validateTileUpdate } from '../middleware/validation.js';
 import prisma from '../lib/prisma.js';
 
 const router = express.Router();
@@ -18,7 +18,7 @@ router.get('/', authenticateJwt, async (req, res, next) => {
   }
 });
 
-router.post('/', authenticateJwt, requireSuperadmin, async (req, res, next) => {
+router.post('/', authenticateJwt, requireSuperadmin, validateTileCreate, async (req, res, next) => {
   try {
     const { name, icon, url, theme } = req.body;
     const tile = await prisma.tiles.create({
@@ -30,7 +30,7 @@ router.post('/', authenticateJwt, requireSuperadmin, async (req, res, next) => {
   }
 });
 
-router.patch('/:id', authenticateJwt, requireSuperadmin, validateId, async (req, res, next) => {
+router.patch('/:id', authenticateJwt, requireSuperadmin, validateId, validateTileUpdate, async (req, res, next) => {
   try {
     const allowed = {};
     for (const f of ['name', 'icon', 'url', 'theme']) {

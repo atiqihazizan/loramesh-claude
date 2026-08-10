@@ -7,6 +7,7 @@ import {
   Building2,
   Cpu,
   Gauge,
+  Layers,
   MapPinned,
   Pentagon,
   Shapes,
@@ -80,6 +81,10 @@ export default function SettingsSidebar({ onNavigate }) {
           <NavLink to="/settings/device-types" onClick={onNavigate} className={settingsLinkClass}>
             <Shapes size={18} className="shrink-0" />
             <span className="text-sm font-medium">Device Types</span>
+          </NavLink>
+          <NavLink to="/settings/tiles" onClick={onNavigate} className={settingsLinkClass}>
+            <Layers size={18} className="shrink-0" />
+            <span className="text-sm font-medium">Tiles</span>
           </NavLink>
         </>
       ) : null}

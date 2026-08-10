@@ -144,3 +144,33 @@ export const validateSiteCreate = [
   body('publish').optional().isBoolean().toBoolean(),
   handleValidationErrors,
 ];
+
+// ============================================
+// TILES
+// ============================================
+export const validateTileCreate = [
+  body('name').isString().trim().isLength({ min: 1, max: 100 }),
+  body('icon').optional({ values: 'falsy' }).isString().trim().isLength({ max: 50 }),
+  body('url')
+    .isString()
+    .trim()
+    .isLength({ min: 1, max: 500 })
+    .matches(/^https?:\/\//)
+    .withMessage('URL must start with http:// or https://'),
+  body('theme').optional().isString().isIn(['light', 'dark']),
+  handleValidationErrors,
+];
+
+export const validateTileUpdate = [
+  body('name').optional().isString().trim().isLength({ min: 1, max: 100 }),
+  body('icon').optional({ values: 'falsy' }).isString().trim().isLength({ max: 50 }),
+  body('url')
+    .optional()
+    .isString()
+    .trim()
+    .isLength({ min: 1, max: 500 })
+    .matches(/^https?:\/\//)
+    .withMessage('URL must start with http:// or https://'),
+  body('theme').optional().isString().isIn(['light', 'dark']),
+  handleValidationErrors,
+];

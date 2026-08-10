@@ -26,6 +26,7 @@ const BoundariesPage = lazy(() => import('./pages/settings/BoundariesPage.jsx'))
 const MyAccountPage = lazy(() => import('./pages/settings/MyAccountPage.jsx'));
 const SensorsPage = lazy(() => import('./pages/settings/SensorsPage.jsx'));
 const DeviceTypesPage = lazy(() => import('./pages/settings/DeviceTypesPage.jsx'));
+const TilesPage = lazy(() => import('./pages/settings/TilesPage.jsx'));
 const AgenciesPage = lazy(() => import('./pages/settings/AgenciesPage.jsx'));
 
 function RouteFallback() {
@@ -101,6 +102,7 @@ export default function App() {
               <Route path="/settings/agencies" element={<AgenciesPage />} />
               <Route path="/settings/sensors" element={<SensorsPage />} />
               <Route path="/settings/device-types" element={<DeviceTypesPage />} />
+              <Route path="/settings/tiles" element={<TilesPage />} />
             </Route>
 
             {/* --- Kumpulan DASHBOARD --- */}
