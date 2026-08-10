@@ -99,6 +99,12 @@ export const validateAgencyCreate = [
     .isLength({ min: 1, max: 50 })
     .matches(/^[A-Z0-9_-]+$/)
     .withMessage('Code: uppercase alphanumeric, _, or - only'),
+  body('default_map_center')
+    .optional()
+    .isString()
+    .customSanitizer((v) => v?.split(',').map((s) => s.trim()).join(','))
+    .matches(/^-?\d+(\.\d+)?,-?\d+(\.\d+)?$/)
+    .withMessage('Format: "lat,lng" (e.g. 3.1390,101.6869)'),
   handleValidationErrors,
 ];
 

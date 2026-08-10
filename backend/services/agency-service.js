@@ -113,10 +113,11 @@ export async function getAgencyById(id, { includeToken = false } = {}) {
  * @param {object} payload
  * @param {string} payload.name
  * @param {string} payload.code
+ * @param {string} [payload.default_map_center]  optional "lat,lng" override
  * @param {object} [payload.admin_user]  { username, password, name?, email? }
  */
 export async function createAgency(payload) {
-  const { name, code, admin_user } = payload;
+  const { name, code, default_map_center, admin_user } = payload;
 
   // Check uniqueness
   const existing = await prisma.agency.findUnique({ where: { code } });
@@ -135,7 +136,7 @@ export async function createAgency(payload) {
         code,
         agency_token: token,
         status: true,
-        default_map_center: AGENCY_DEFAULTS.MAP_CENTER,
+        default_map_center: default_map_center || AGENCY_DEFAULTS.MAP_CENTER,
         default_map_zoom: AGENCY_DEFAULTS.MAP_ZOOM,
         default_tile_provider: AGENCY_DEFAULTS.TILE_PROVIDER,
         tracking_zoom_moving: AGENCY_DEFAULTS.TRACKING_ZOOM_MOVING,

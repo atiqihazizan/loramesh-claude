@@ -48,6 +48,8 @@ export default function AgencyFormModal({
     } else {
       if (!code.trim()) return;
       payload = { name: name.trim(), code: code.trim().toUpperCase() };
+      const trimmedCenter = mapCenter.trim();
+      if (trimmedCenter) payload.default_map_center = trimmedCenter;
       if (withAdmin && adminUsername.trim() && adminPassword) {
         payload.admin_user = {
           username: adminUsername.trim(),
@@ -120,38 +122,36 @@ export default function AgencyFormModal({
             )}
           </div>
 
-          {isEdit ? (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="block text-xs font-medium text-slate-500 mb-1">
-                  Default map center (lat,lng)
-                </label>
-                <button
-                  type="button"
-                  onClick={() => setShowPicker((v) => !v)}
-                  className="flex items-center gap-1.5 text-xs text-brand-600 hover:text-brand-700"
-                >
-                  <MapPin size={13} />
-                  {showPicker ? 'Hide map' : 'Pick on map'}
-                </button>
-              </div>
-              <input
-                type="text"
-                value={mapCenter}
-                onChange={(e) => setMapCenter(e.target.value)}
-                placeholder="3.1390,101.6869"
-                className={fieldCls}
-              />
-              {showPicker ? (
-                <LocationPickerMap
-                  lat={pickerLat}
-                  lng={pickerLng}
-                  agencyCenter={mapCenter}
-                  onChange={(lat, lng) => setMapCenter(`${lat},${lng}`)}
-                />
-              ) : null}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-medium text-slate-500 mb-1">
+                Default map center (lat,lng)
+              </label>
+              <button
+                type="button"
+                onClick={() => setShowPicker((v) => !v)}
+                className="flex items-center gap-1.5 text-xs text-brand-600 hover:text-brand-700"
+              >
+                <MapPin size={13} />
+                {showPicker ? 'Hide map' : 'Pick on map'}
+              </button>
             </div>
-          ) : null}
+            <input
+              type="text"
+              value={mapCenter}
+              onChange={(e) => setMapCenter(e.target.value)}
+              placeholder="3.1390,101.6869"
+              className={fieldCls}
+            />
+            {showPicker ? (
+              <LocationPickerMap
+                lat={pickerLat}
+                lng={pickerLng}
+                agencyCenter={mapCenter}
+                onChange={(lat, lng) => setMapCenter(`${lat},${lng}`)}
+              />
+            ) : null}
+          </div>
 
           {!isEdit ? (
             <div className="rounded-lg border border-slate-200 p-3">
