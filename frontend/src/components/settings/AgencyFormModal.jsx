@@ -2,8 +2,10 @@
 // can be created together with the agency.
 
 import { useState } from 'react';
-import { X } from 'lucide-react';
+import { MapPin, X } from 'lucide-react';
 import { errMsg } from '../../lib/api.js';
+import { parseLatLng } from '../../lib/mapConfig.js';
+import LocationPickerMap from './LocationPickerMap.jsx';
 
 /**
  * @param {object} props
@@ -26,13 +28,23 @@ export default function AgencyFormModal({
   const [withAdmin, setWithAdmin] = useState(false);
   const [adminUsername, setAdminUsername] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
+  const [mapCenter, setMapCenter] = useState(agency?.default_map_center ?? '');
+  const [showPicker, setShowPicker] = useState(false);
+
+  // parseLatLng returns [lng, lat]; picker props need separate lat, lng strings
+  const pickerParsed = parseLatLng(mapCenter);
+  const pickerLat = pickerParsed ? String(pickerParsed[1]) : '';
+  const pickerLng = pickerParsed ? String(pickerParsed[0]) : '';
 
   const handleSave = async () => {
     if (!name.trim()) return;
     let payload;
     if (isEdit) {
-      // PATCH only allows settings-style fields; here we update name.
       payload = { name: name.trim() };
+      const trimmedCenter = mapCenter.trim();
+      if (trimmedCenter && trimmedCenter !== (agency?.default_map_center ?? '')) {
+        payload.default_map_center = trimmedCenter;
+      }
     } else {
       if (!code.trim()) return;
       payload = { name: name.trim(), code: code.trim().toUpperCase() };
@@ -57,7 +69,7 @@ export default function AgencyFormModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-md rounded-xl bg-white shadow-xl">
+      <div className="w-full max-w-xl rounded-xl bg-white shadow-xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-3">
           <h3 className="text-sm font-semibold text-slate-800">
             {isEdit ? 'Edit agency' : 'New agency'}
@@ -107,6 +119,39 @@ export default function AgencyFormModal({
               </p>
             )}
           </div>
+
+          {isEdit ? (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-medium text-slate-500 mb-1">
+                  Default map center (lat,lng)
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setShowPicker((v) => !v)}
+                  className="flex items-center gap-1.5 text-xs text-brand-600 hover:text-brand-700"
+                >
+                  <MapPin size={13} />
+                  {showPicker ? 'Hide map' : 'Pick on map'}
+                </button>
+              </div>
+              <input
+                type="text"
+                value={mapCenter}
+                onChange={(e) => setMapCenter(e.target.value)}
+                placeholder="3.1390,101.6869"
+                className={fieldCls}
+              />
+              {showPicker ? (
+                <LocationPickerMap
+                  lat={pickerLat}
+                  lng={pickerLng}
+                  agencyCenter={mapCenter}
+                  onChange={(lat, lng) => setMapCenter(`${lat},${lng}`)}
+                />
+              ) : null}
+            </div>
+          ) : null}
 
           {!isEdit ? (
             <div className="rounded-lg border border-slate-200 p-3">
