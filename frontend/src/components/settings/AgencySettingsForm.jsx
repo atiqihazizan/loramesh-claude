@@ -2,11 +2,12 @@
 
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Save } from 'lucide-react';
+import { Save, MapPin } from 'lucide-react';
 import { api, errMsg } from '../../lib/api.js';
 import { parseLatLng } from '../../lib/mapConfig.js';
 import Spinner from '../ui/Spinner.jsx';
 import SettingsSection from './SettingsSection.jsx';
+import LocationPickerMap from './LocationPickerMap.jsx';
 
 const TRACKING_FIELDS = [
   'tracking_zoom_moving',
@@ -65,6 +66,7 @@ function AgencySettingsFormBody({
   const [baseline, setBaseline] = useState(initial);
   const [fieldError, setFieldError] = useState(null);
   const [saved, setSaved] = useState(false);
+  const [showPicker, setShowPicker] = useState(false);
 
   const tilesQuery = useQuery({
     queryKey: ['tiles'],
@@ -82,6 +84,10 @@ function AgencySettingsFormBody({
     setFieldError(null);
     setForm((prev) => (prev ? { ...prev, [key]: value } : prev));
   };
+
+  const pickerParsed = parseLatLng(form?.default_map_center ?? '');
+  const pickerLat = pickerParsed ? String(pickerParsed[1]) : '';
+  const pickerLng = pickerParsed ? String(pickerParsed[0]) : '';
 
   const validateClient = () => {
     if (!form) return 'Form data missing';
@@ -173,10 +179,20 @@ function AgencySettingsFormBody({
 
         <fieldset className="space-y-4">
           <legend className="text-sm font-semibold text-slate-700">Map</legend>
-          <div>
-            <label className="label" htmlFor="default_map_center">
-              Default center (lat,lng)
-            </label>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="label mb-0" htmlFor="default_map_center">
+                Default center (lat,lng)
+              </label>
+              <button
+                type="button"
+                onClick={() => setShowPicker((v) => !v)}
+                className="flex items-center gap-1.5 text-xs text-brand-600 hover:text-brand-700"
+              >
+                <MapPin size={13} />
+                {showPicker ? 'Hide map' : 'Pick on map'}
+              </button>
+            </div>
             <input
               id="default_map_center"
               className="input"
@@ -184,6 +200,14 @@ function AgencySettingsFormBody({
               onChange={(e) => setField('default_map_center', e.target.value)}
               placeholder="3.1390,101.6869"
             />
+            {showPicker ? (
+              <LocationPickerMap
+                lat={pickerLat}
+                lng={pickerLng}
+                agencyCenter={form.default_map_center}
+                onChange={(lat, lng) => setField('default_map_center', `${lat},${lng}`)}
+              />
+            ) : null}
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
