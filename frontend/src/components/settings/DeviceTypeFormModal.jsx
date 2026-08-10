@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
 import { errMsg } from '../../lib/api.js';
+import { DEVICE_TYPE_ICONS, resolveDeviceTypeIcon } from '../../lib/deviceTypeIcons.js';
 
 function toForm(type) {
   return {
@@ -94,16 +95,31 @@ export default function DeviceTypeFormModal({
           </div>
           <div>
             <label className="block text-xs font-medium text-slate-500 mb-1">
-              Icon (lucide name)
+              Icon
             </label>
-            <input
-              type="text"
-              value={form.icon}
-              onChange={(e) => setField('icon', e.target.value)}
-              placeholder="e.g. Smartphone, RadioTower"
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm
-                         focus:outline-none focus:ring-2 focus:ring-brand-500"
-            />
+            <div className="flex flex-wrap gap-2">
+              {DEVICE_TYPE_ICONS.map((name) => {
+                const Icon = resolveDeviceTypeIcon(name);
+                const selected = form.icon === name;
+                return (
+                  <button
+                    key={name}
+                    type="button"
+                    title={name}
+                    onClick={() => setField('icon', selected ? '' : name)}
+                    className={[
+                      'flex flex-col items-center gap-1 rounded-lg border p-2 text-xs transition-colors',
+                      selected
+                        ? 'border-brand-500 bg-brand-50 text-brand-700'
+                        : 'border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-slate-50',
+                    ].join(' ')}
+                  >
+                    <Icon size={20} strokeWidth={1.5} />
+                    <span className="leading-none">{name}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
           <div>
             <label className="block text-xs font-medium text-slate-500 mb-1">

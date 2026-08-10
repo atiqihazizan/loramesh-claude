@@ -25,6 +25,8 @@ const BY_PASCAL = {
   Smartphone,
 };
 
+export const DEVICE_TYPE_ICONS = Object.keys(BY_PASCAL);
+
 /**
  * @param {string | null | undefined} iconName
  * @returns {import('lucide-react').LucideIcon}
