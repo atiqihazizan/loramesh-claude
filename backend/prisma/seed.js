@@ -8,6 +8,30 @@ import prisma from '../lib/prisma.js';
 const BCRYPT_ROUNDS = parseInt(process.env.BCRYPT_ROUNDS || '10', 10);
 
 // ============================================
+// TILES
+// ============================================
+const TILES = [
+  {
+    name: 'Roadmap',
+    icon: 'map',
+    url: 'https://tiles.openfreemap.org/styles/liberty',
+    theme: 'light',
+  },
+  {
+    name: 'Satellite',
+    icon: 'satellite',
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    theme: 'dark',
+  },
+  {
+    name: 'Terrain',
+    icon: 'mountain',
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
+    theme: 'light',
+  },
+];
+
+// ============================================
 // LEVELS
 // ============================================
 const LEVELS = [
@@ -160,6 +184,18 @@ async function main() {
     }
   }
   console.log(`[seed]   ✓ ${MASTER_SENSORS.length} master sensors`);
+
+  // ----- TILES -----
+  console.log('[seed] Tiles...');
+  for (const t of TILES) {
+    const existing = await prisma.tiles.findFirst({ where: { name: t.name } });
+    if (!existing) {
+      await prisma.tiles.create({ data: t });
+    } else if (existing.url !== t.url) {
+      await prisma.tiles.update({ where: { id: existing.id }, data: { url: t.url, theme: t.theme } });
+    }
+  }
+  console.log(`[seed]   ✓ ${TILES.length} tiles`);
 
   // ----- GLOBAL CONFIG -----
   console.log('[seed] Global config...');
