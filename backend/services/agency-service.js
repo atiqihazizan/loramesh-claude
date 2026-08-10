@@ -212,15 +212,15 @@ export async function updateAgency(id, patch) {
   if (patch.status !== undefined) allowed.status = patch.status;
   if (patch.default_map_center !== undefined)
     allowed.default_map_center = patch.default_map_center;
-  if (patch.default_map_zoom !== undefined)
+  if (patch.default_map_zoom != null)
     allowed.default_map_zoom = patch.default_map_zoom;
   if (patch.default_tile_provider !== undefined)
     allowed.default_tile_provider = patch.default_tile_provider;
-  if (patch.tracking_zoom_moving !== undefined)
+  if (patch.tracking_zoom_moving != null)
     allowed.tracking_zoom_moving = patch.tracking_zoom_moving;
-  if (patch.tracking_zoom_stopped !== undefined)
+  if (patch.tracking_zoom_stopped != null)
     allowed.tracking_zoom_stopped = patch.tracking_zoom_stopped;
-  if (patch.tracking_stop_radius_m !== undefined)
+  if (patch.tracking_stop_radius_m != null)
     allowed.tracking_stop_radius_m = patch.tracking_stop_radius_m;
   if (patch.session_timeout_hours !== undefined)
     allowed.session_timeout_hours = patch.session_timeout_hours;

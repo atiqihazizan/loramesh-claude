@@ -106,13 +106,14 @@ export const validateAgencySettings = [
   body('default_map_center')
     .optional()
     .isString()
+    .customSanitizer((v) => v?.split(',').map((s) => s.trim()).join(','))
     .matches(/^-?\d+(\.\d+)?,-?\d+(\.\d+)?$/)
-    .withMessage('Format: "lat,lng"'),
-  body('default_map_zoom').optional().isInt({ min: 1, max: 22 }).toInt(),
+    .withMessage('Format: "lat,lng" (e.g. 3.1390,101.6869)'),
+  body('default_map_zoom').optional({ values: 'falsy' }).isInt({ min: 1, max: 22 }).toInt(),
   body('default_tile_provider').optional().isString().isLength({ min: 1, max: 50 }),
-  body('tracking_zoom_moving').optional().isInt({ min: 1, max: 22 }).toInt(),
-  body('tracking_zoom_stopped').optional().isInt({ min: 1, max: 22 }).toInt(),
-  body('tracking_stop_radius_m').optional().isInt({ min: 1, max: 1000 }).toInt(),
+  body('tracking_zoom_moving').optional({ values: 'falsy' }).isInt({ min: 1, max: 22 }).toInt(),
+  body('tracking_zoom_stopped').optional({ values: 'falsy' }).isInt({ min: 1, max: 22 }).toInt(),
+  body('tracking_stop_radius_m').optional({ values: 'falsy' }).isInt({ min: 1, max: 1000 }).toInt(),
   body('session_timeout_hours').optional().isInt({ min: 1, max: 8760 }).toInt(),
   handleValidationErrors,
 ];

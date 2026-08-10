@@ -42,6 +42,19 @@ export function errorHandler(err, req, res, next) {
     });
   }
 
+  // Prisma validation errors (wrong type, null on non-nullable, etc.)
+  if (err.name === 'PrismaClientValidationError') {
+    const fieldMatches = [...err.message.matchAll(/Argument `(\w+)`/g)];
+    const fields = [...new Set(fieldMatches.map((m) => m[1]))];
+    return res.status(400).json({
+      error: 'Validation failed',
+      fields: fields.length ? fields : undefined,
+      message: fields.length
+        ? `Invalid value for field(s): ${fields.join(', ')}`
+        : 'Invalid value provided to database',
+    });
+  }
+
   // JSON parse errors (from body-parser)
   if (err.type === 'entity.parse.failed') {
     return res.status(400).json({ error: 'Invalid JSON body' });

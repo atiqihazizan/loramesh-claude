@@ -119,6 +119,8 @@ function AgencySettingsFormBody({
     }
     const patch = buildPatch(baseline, {
       ...form,
+      default_map_center: form.default_map_center
+        ?.split(',').map((s) => s.trim()).join(','),
       default_map_zoom: Number(form.default_map_zoom),
       tracking_zoom_moving: Number(form.tracking_zoom_moving),
       tracking_zoom_stopped: Number(form.tracking_zoom_stopped),

@@ -44,8 +44,17 @@ export function useAgencySettings(agencyId) {
       });
       return res.data?.agency;
     },
-    onSuccess: () => {
+    onSuccess: (updatedAgency) => {
       queryClient.invalidateQueries({ queryKey: ['settings', 'agency'] });
+      queryClient.invalidateQueries({ queryKey: ['map-data'] });
+
+      // Patch authStore so map reads fresh center/zoom without full re-login
+      if (updatedAgency) {
+        const { user, setUser } = useAuthStore.getState();
+        if (user?.agency?.id === updatedAgency.id) {
+          setUser({ ...user, agency: { ...user.agency, ...updatedAgency } });
+        }
+      }
     },
   });
 
