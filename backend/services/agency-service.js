@@ -84,7 +84,6 @@ export async function getAgencyById(id, { includeToken = false } = {}) {
         select: {
           user_agencies: true,
           device_agencies: { where: { active: true } },
-          sites: true,
         },
       },
     },
@@ -98,7 +97,6 @@ export async function getAgencyById(id, { includeToken = false } = {}) {
     ...agency,
     user_count: agency._count.user_agencies,
     device_count: agency._count.device_agencies,
-    site_count: agency._count.sites,
     _count: undefined,
   };
 }

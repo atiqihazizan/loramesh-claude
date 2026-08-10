@@ -17,7 +17,6 @@ function SettingsRoleGuard() {
   const adminPaths = [
     '/settings/agency',
     '/settings/devices',
-    '/settings/sites',
     '/settings/boundaries',
     '/settings/users',
   ];
