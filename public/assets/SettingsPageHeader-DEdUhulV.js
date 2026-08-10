@@ -1,0 +1,1 @@
+import{a as e}from"./query-vendor-B4uqgK3p.js";var t=e();function n({title:e,subtitle:n}){return(0,t.jsxs)(`header`,{children:[(0,t.jsx)(`h1`,{className:`text-xl font-semibold text-slate-900`,children:e}),n?(0,t.jsx)(`p`,{className:`text-sm text-slate-500 mt-1`,children:n}):null]})}export{n as t};

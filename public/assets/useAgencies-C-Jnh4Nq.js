@@ -1,0 +1,1 @@
+import{n as e}from"./query-vendor-B4uqgK3p.js";import{n as t,r as n}from"./index-CrLAv92x.js";async function r(){return(await n.get(`/agencies`)).data?.agencies||[]}function i(){let n=e({queryKey:[`agencies`],queryFn:r,enabled:t(e=>e.isSuperadmin()),staleTime:300*1e3});return{agencies:n.data??[],isLoading:n.isLoading,isError:n.isError}}export{i as t};

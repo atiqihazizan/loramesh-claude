@@ -1,0 +1,1 @@
+import{a as e}from"./query-vendor-B4uqgK3p.js";import{a as t}from"./index-CrLAv92x.js";var n=e();function r({className:e=`h-8 w-auto max-w-[120px] object-contain`,alt:r=`LoRa Mesh`}){return(0,n.jsx)(`img`,{src:t(`logo.png`),alt:r,className:e,width:120,height:32})}export{r as t};
