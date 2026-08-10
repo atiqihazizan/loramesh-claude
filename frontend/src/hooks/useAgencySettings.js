@@ -46,7 +46,7 @@ export function useAgencySettings(agencyId) {
     },
     onSuccess: (updatedAgency) => {
       queryClient.invalidateQueries({ queryKey: ['settings', 'agency'] });
-      queryClient.invalidateQueries({ queryKey: ['map-data'] });
+      queryClient.resetQueries({ queryKey: ['map-data'] });
 
       // Patch authStore so map reads fresh center/zoom without full re-login
       if (updatedAgency) {
