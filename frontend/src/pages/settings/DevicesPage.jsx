@@ -17,6 +17,7 @@ import DeviceFormModal from '../../components/settings/DeviceFormModal.jsx';
 export default function DevicesPage() {
   const isAgencyAdmin = useAuthStore((s) => s.isAgencyAdmin());
   const isSuperadmin = useAuthStore((s) => s.isSuperadmin());
+  const userAgency = useAuthStore((s) => s.user?.agency);
   const { agencies, isLoading: agenciesLoading } = useAgencies();
   const [superadminAgencyId, setSuperadminAgencyId] = useState(null);
   const [search, setSearch] = useState('');
@@ -24,6 +25,10 @@ export default function DevicesPage() {
   const agencyTargetId = isSuperadmin
     ? superadminAgencyId ?? agencies[0]?.id ?? null
     : undefined;
+
+  const agencyMapCenter = isSuperadmin
+    ? (agencies.find((a) => a.id === agencyTargetId)?.default_map_center ?? null)
+    : (userAgency?.default_map_center ?? null);
 
   const {
     devices,
@@ -199,6 +204,7 @@ export default function DevicesPage() {
                 device={modal.device}
                 isSuperadmin={isSuperadmin}
                 agencies={agencies}
+                agencyMapCenter={agencyMapCenter}
                 onClose={() => setModal(null)}
                 onSubmitCreate={async (payload) => {
                   setFormError(null);

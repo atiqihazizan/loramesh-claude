@@ -7,7 +7,7 @@ import Map, { Marker, useMap } from 'react-map-gl/maplibre';
 import { Layers, Search } from 'lucide-react';
 import { api } from '../../lib/api.js';
 import { buildMapStyle } from '../../lib/mapStyle.js';
-import { FALLBACK_CENTER, FALLBACK_ZOOM } from '../../lib/mapConfig.js';
+import { parseLatLng, FALLBACK_CENTER, FALLBACK_ZOOM } from '../../lib/mapConfig.js';
 
 const FALLBACK_TILES = [
   { name: 'Roadmap',   url: 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}' },
@@ -58,7 +58,7 @@ function FlyTo({ target }) {
   return null;
 }
 
-export default function LocationPickerMap({ lat, lng, onChange }) {
+export default function LocationPickerMap({ lat, lng, onChange, agencyCenter = null }) {
   const tilesQuery = useQuery({
     queryKey: ['tiles'],
     queryFn: fetchTiles,
@@ -87,11 +87,15 @@ export default function LocationPickerMap({ lat, lng, onChange }) {
     latNum >= -90 && latNum <= 90 &&
     lngNum >= -180 && lngNum <= 180;
 
-  const [initialView] = useState(() => ({
-    longitude: hasPos ? lngNum : FALLBACK_CENTER[0],
-    latitude: hasPos ? latNum : FALLBACK_CENTER[1],
-    zoom: FALLBACK_ZOOM,
-  }));
+  const [initialView] = useState(() => {
+    if (hasPos) return { longitude: lngNum, latitude: latNum, zoom: FALLBACK_ZOOM };
+    const agencyParsed = parseLatLng(agencyCenter); // returns [lng, lat] or null
+    return {
+      longitude: agencyParsed?.[0] ?? FALLBACK_CENTER[0],
+      latitude: agencyParsed?.[1] ?? FALLBACK_CENTER[1],
+      zoom: FALLBACK_ZOOM,
+    };
+  });
 
   const [search, setSearch] = useState('');
   const [results, setResults] = useState([]);

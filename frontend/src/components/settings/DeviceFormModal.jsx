@@ -45,6 +45,7 @@ export default function DeviceFormModal({
   submitError,
   isSuperadmin = false,
   agencies = [],
+  agencyMapCenter = null,
 }) {
   const { deviceTypes, isLoading: typesLoading } = useDeviceTypes();
   const [form, setForm] = useState(() =>
@@ -246,6 +247,7 @@ export default function DeviceFormModal({
                 <LocationPickerMap
                   lat={form.latitude}
                   lng={form.longitude}
+                  agencyCenter={agencyMapCenter}
                   onChange={(lat, lng) => {
                     setField('latitude', lat);
                     setField('longitude', lng);
