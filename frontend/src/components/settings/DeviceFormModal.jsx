@@ -1,9 +1,10 @@
 // E3-e — create / edit device modal
 
 import { useState } from 'react';
-import { X } from 'lucide-react';
+import { MapPin, X } from 'lucide-react';
 import { errMsg } from '../../lib/api.js';
 import { useDeviceTypes } from '../../hooks/useDeviceTypes.js';
+import LocationPickerMap from './LocationPickerMap.jsx';
 import Spinner from '../ui/Spinner.jsx';
 
 function emptyCreateForm() {
@@ -50,6 +51,7 @@ export default function DeviceFormModal({
     mode === 'edit' && device ? deviceToForm(device) : emptyCreateForm()
   );
   const [localError, setLocalError] = useState(null);
+  const [showMap, setShowMap] = useState(false);
 
   const setField = (key, value) => {
     setLocalError(null);
@@ -106,7 +108,7 @@ export default function DeviceFormModal({
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 p-4">
-      <div className="rounded-xl border border-slate-200 bg-white w-full max-w-lg p-5 shadow-xl max-h-[90vh] overflow-y-auto">
+      <div className="rounded-xl border border-slate-200 bg-white w-full max-w-xl p-5 shadow-xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-base font-semibold text-slate-800">
             {mode === 'create' ? 'Add device' : 'Edit device'}
@@ -198,31 +200,58 @@ export default function DeviceFormModal({
                 ))}
               </select>
             </div>
-            <div>
-              <label className="label" htmlFor="dev-lat">
-                Latitude
-              </label>
-              <input
-                id="dev-lat"
-                className="input"
-                type="number"
-                step="any"
-                value={form.latitude}
-                onChange={(e) => setField('latitude', e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="label" htmlFor="dev-lng">
-                Longitude
-              </label>
-              <input
-                id="dev-lng"
-                className="input"
-                type="number"
-                step="any"
-                value={form.longitude}
-                onChange={(e) => setField('longitude', e.target.value)}
-              />
+            <div className="sm:col-span-2 space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="label mb-0">Location (optional)</label>
+                <button
+                  type="button"
+                  onClick={() => setShowMap((v) => !v)}
+                  className="flex items-center gap-1.5 text-xs text-brand-600 hover:text-brand-700"
+                >
+                  <MapPin size={13} />
+                  {showMap ? 'Hide map' : 'Pick on map'}
+                </button>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="label text-xs" htmlFor="dev-lat">
+                    Latitude
+                  </label>
+                  <input
+                    id="dev-lat"
+                    className="input"
+                    type="number"
+                    step="any"
+                    placeholder="e.g. 3.1390"
+                    value={form.latitude}
+                    onChange={(e) => setField('latitude', e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="label text-xs" htmlFor="dev-lng">
+                    Longitude
+                  </label>
+                  <input
+                    id="dev-lng"
+                    className="input"
+                    type="number"
+                    step="any"
+                    placeholder="e.g. 101.6869"
+                    value={form.longitude}
+                    onChange={(e) => setField('longitude', e.target.value)}
+                  />
+                </div>
+              </div>
+              {showMap ? (
+                <LocationPickerMap
+                  lat={form.latitude}
+                  lng={form.longitude}
+                  onChange={(lat, lng) => {
+                    setField('latitude', lat);
+                    setField('longitude', lng);
+                  }}
+                />
+              ) : null}
             </div>
           </div>
 

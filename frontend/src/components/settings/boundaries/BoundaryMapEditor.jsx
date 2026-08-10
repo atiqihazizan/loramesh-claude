@@ -3,7 +3,6 @@
 import { useMemo, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Map, { Source, Layer, Marker, useMap } from 'react-map-gl/maplibre';
-import 'maplibre-gl/dist/maplibre-gl.css';
 import { api } from '../../../lib/api.js';
 import { buildMapStyle } from '../../../lib/mapStyle.js';
 import { FALLBACK_CENTER, FALLBACK_ZOOM } from '../../../lib/mapConfig.js';

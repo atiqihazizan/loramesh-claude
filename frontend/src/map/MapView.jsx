@@ -15,7 +15,6 @@
 
 import { useMemo, useEffect, useRef } from 'react';
 import Map, { useMap } from 'react-map-gl/maplibre';
-import 'maplibre-gl/dist/maplibre-gl.css';
 
 import { buildMapStyle } from '../lib/mapStyle.js';
 import { getTrackingConfig, isDeviceMoving } from '../lib/trackingConfig.js';
