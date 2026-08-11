@@ -14,6 +14,9 @@ import {
   Anchor,
   Waves,
   Fish,
+  Sailboat,
+  Flag,
+  FlagTriangleRight,
   Droplets,
   GlassWater,
   FlaskConical,
@@ -32,6 +35,7 @@ import {
   Satellite,
   Scale,
   Microscope,
+  Dock,
 } from 'lucide-react';
 
 /** @type {Record<string, import('lucide-react').LucideIcon>} */
@@ -51,6 +55,10 @@ const BY_PASCAL = {
   Anchor,
   Waves,
   Fish,
+  Sailboat,
+  Flag,
+  FlagTriangleRight,
+  Dock,
   // Kualiti Air
   Droplets,
   GlassWater,
