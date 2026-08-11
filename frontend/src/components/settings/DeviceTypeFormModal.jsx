@@ -1,7 +1,7 @@
 // E5-a — create/edit device type modal
 
 import { useState } from 'react';
-import { X } from 'lucide-react';
+import { ChevronDown, X } from 'lucide-react';
 import { errMsg } from '../../lib/api.js';
 import { DEVICE_TYPE_ICONS, resolveDeviceTypeIcon } from '../../lib/deviceTypeIcons.js';
 
@@ -30,6 +30,8 @@ export default function DeviceTypeFormModal({
   error,
 }) {
   const [form, setForm] = useState(() => toForm(deviceType));
+  const [iconOpen, setIconOpen] = useState(false);
+  const SelectedIcon = resolveDeviceTypeIcon(form.icon || null);
   const isEdit = !!deviceType;
 
   const setField = (k, v) => setForm((p) => ({ ...p, [k]: v }));
@@ -97,28 +99,64 @@ export default function DeviceTypeFormModal({
             <label className="block text-xs font-medium text-slate-500 mb-1">
               Icon
             </label>
-            <div className="flex flex-wrap gap-2">
-              {DEVICE_TYPE_ICONS.map((name) => {
-                const Icon = resolveDeviceTypeIcon(name);
-                const selected = form.icon === name;
-                return (
-                  <button
-                    key={name}
-                    type="button"
-                    title={name}
-                    onClick={() => setField('icon', selected ? '' : name)}
-                    className={[
-                      'flex flex-col items-center gap-1 rounded-lg border p-2 text-xs transition-colors',
-                      selected
-                        ? 'border-brand-500 bg-brand-50 text-brand-700'
-                        : 'border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-slate-50',
-                    ].join(' ')}
-                  >
-                    <Icon size={20} strokeWidth={1.5} />
-                    <span className="leading-none">{name}</span>
-                  </button>
-                );
-              })}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setIconOpen((o) => !o)}
+                className="flex w-full items-center gap-2 rounded-lg border border-slate-200
+                           px-3 py-2 text-sm text-left hover:bg-slate-50
+                           focus:outline-none focus:ring-2 focus:ring-brand-500"
+              >
+                {form.icon ? (
+                  <>
+                    <SelectedIcon size={16} strokeWidth={1.5} className="shrink-0 text-slate-600" />
+                    <span className="flex-1 text-slate-700">{form.icon}</span>
+                  </>
+                ) : (
+                  <span className="flex-1 text-slate-400">Select icon…</span>
+                )}
+                <ChevronDown size={14} className="shrink-0 text-slate-400" />
+              </button>
+
+              {iconOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 z-[55]"
+                    onClick={() => setIconOpen(false)}
+                  />
+                  <div className="absolute z-[56] mt-1 w-full rounded-lg border border-slate-200
+                                  bg-white shadow-lg max-h-52 overflow-y-auto">
+                    <button
+                      type="button"
+                      onClick={() => { setField('icon', ''); setIconOpen(false); }}
+                      className="flex w-full items-center gap-2 px-3 py-2 text-sm
+                                 text-slate-400 hover:bg-slate-50"
+                    >
+                      <span>— None —</span>
+                    </button>
+                    {DEVICE_TYPE_ICONS.map((name) => {
+                      const Icon = resolveDeviceTypeIcon(name);
+                      const selected = form.icon === name;
+                      return (
+                        <button
+                          key={name}
+                          type="button"
+                          onClick={() => { setField('icon', name); setIconOpen(false); }}
+                          className={[
+                            'flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors',
+                            selected
+                              ? 'bg-brand-50 text-brand-700'
+                              : 'text-slate-700 hover:bg-slate-50',
+                          ].join(' ')}
+                        >
+                          <Icon size={16} strokeWidth={1.5} className="shrink-0" />
+                          <span>{name}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
             </div>
           </div>
           <div>
