@@ -35,3 +35,6 @@ flutter/.flutter-plugins-dependencies
 
 
 *.bak
+
+simulator/
+history-development/
