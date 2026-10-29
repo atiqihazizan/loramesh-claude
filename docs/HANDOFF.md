@@ -110,7 +110,10 @@ Frontend: `src/lib/socket.js`, `src/hooks/useDeviceSocket.js` (dipanggil di `src
   `listDevices` di server: 9 entri peta 88880014 dengan unit dari master_sensor. Frontend tidak diubah (bundle index-Hl9VtMt1).
   Rollback backend: `sudo git reset --hard 6c3a1a2` (atau v1.0.3) + restart; kemudian UNDO DB di atas jika perlu.
 - UI disahkan pengguna (2026-10-29): panel Boey 4 papar senarai berlabel dengan betul.
-- BELUM: sahkan unit/julat dengan datasheet vendor; `historical/SensorTab.jsx` masih mentah; UI edit peta;
+- Historical berlabel (lokal, BELUM deploy frontend): `HistoricalSidebar.jsx` bawa `sensor_unit` device terpilih dalam `query.sensorUnit` →
+  `HistoricalPage.jsx` → `SensorTab.jsx` paparkan SATU KOLUM per parameter (header label + unit, nilai dinyahkod `decodeSensors`); tiada
+  peta → kolum "Sensor data" mentah seperti dahulu. Hanya `vite build` + 16 ujian lulus; TIADA ujian komponen & belum dilihat di UI.
+- BELUM: sahkan unit/julat dengan datasheet vendor; sahkan Historical di UI selepas deploy frontend; UI edit peta;
   threshold/amaran; peta untuk device lain.
 - FIX (lokal, BELUM deploy): `backend/lib/live-tracking-write.js` upsert `update` tidak lagi menimpa `live_tracking.sensor_data` dengan null bila
   payload tiada sensor_data (sebelum ini mesej status boleh memadam nilai terakhir → refresh papar "—"). DIKEMAS KINI (lokal, BELUM deploy): `backend/lib/present-fields.js`

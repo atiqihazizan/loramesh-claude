@@ -65,6 +65,7 @@ export default function HistoricalSidebar() {
       deviceId,
       deviceName: selectedDevice?.name || deviceId,
       isStatic: selectedDevice?.is_static === true,
+      sensorUnit: selectedDevice?.sensor_unit ?? null, // peta register → kolum berlabel
       from: `${ymd(fromDay)} 00:00:00`,
       to: `${ymd(toDay)} 23:59:59`,
     });

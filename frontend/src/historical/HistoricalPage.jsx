@@ -70,6 +70,7 @@ function HistoricalPageContent({ query }) {
         ) : (
           <SensorTab
             track={playback.track}
+            sensorMap={query.sensorUnit}
             isLoading={playback.isLoading}
             isError={playback.isError}
             error={playback.error}

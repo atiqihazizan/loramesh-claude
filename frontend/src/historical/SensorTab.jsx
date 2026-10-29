@@ -4,6 +4,7 @@
 import { useMemo } from 'react';
 import { errMsg } from '../lib/api.js';
 import Spinner from '../components/ui/Spinner.jsx';
+import { decodeSensors } from '../lib/sensorDecode.js';
 
 function fmtTime(value) {
   if (!value) return '—';
@@ -37,12 +38,19 @@ function num(v, digits) {
 /**
  * @param {object} props
  * @param {object} props.track     /playback/:id response (has points[])
+ * @param {Array|null} props.sensorMap  devices.sensor_unit — jika ada, satu kolum berlabel setiap parameter
  * @param {boolean} props.isLoading
  * @param {boolean} props.isError
  * @param {*} props.error
  */
-export default function SensorTab({ track, isLoading, isError, error }) {
+export default function SensorTab({ track, sensorMap, isLoading, isError, error }) {
   const points = useMemo(() => track?.points ?? [], [track]);
+  const hasMap = Array.isArray(sensorMap) && sensorMap.length > 0;
+  // Satu baris nilai terhitung setiap titik; null jika data titik itu tidak boleh dinyahkod.
+  const decodedRows = useMemo(
+    () => (hasMap ? points.map((p) => decodeSensors(p.sensor_data, sensorMap)) : null),
+    [hasMap, points, sensorMap]
+  );
 
   if (isLoading) {
     return (
@@ -96,13 +104,27 @@ export default function SensorTab({ track, isLoading, isError, error }) {
               <th className="px-3 py-2 text-left text-xs font-medium uppercase text-slate-500">
                 Longitude
               </th>
-              <th className="px-3 py-2 text-left text-xs font-medium uppercase text-slate-500">
-                Sensor data
-              </th>
+              {hasMap ? (
+                sensorMap.map((s) => (
+                  <th
+                    key={s.key}
+                    className="px-3 py-2 text-right text-xs font-medium uppercase text-slate-500 whitespace-nowrap"
+                  >
+                    {s.label ?? s.key}
+                    {s.unit ? (
+                      <span className="ml-1 normal-case text-slate-400">({s.unit})</span>
+                    ) : null}
+                  </th>
+                ))
+              ) : (
+                <th className="px-3 py-2 text-left text-xs font-medium uppercase text-slate-500">
+                  Sensor data
+                </th>
+              )}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {points.map((p) => (
+            {points.map((p, i) => (
               <tr key={p.id} className="hover:bg-slate-50">
                 <td className="px-3 py-2 whitespace-nowrap text-slate-700">
                   {fmtTime(p.send_dt)}
@@ -113,9 +135,20 @@ export default function SensorTab({ track, isLoading, isError, error }) {
                 <td className="px-3 py-2 whitespace-nowrap text-slate-600 font-mono">
                   {num(p.longitude, 5)}
                 </td>
-                <td className="px-3 py-2 text-slate-600 font-mono">
-                  {sensorText(p.sensor_data)}
-                </td>
+                {hasMap ? (
+                  sensorMap.map((s, j) => (
+                    <td
+                      key={s.key}
+                      className="px-3 py-2 whitespace-nowrap text-right text-slate-600 font-mono"
+                    >
+                      {decodedRows[i]?.[j]?.text ?? '—'}
+                    </td>
+                  ))
+                ) : (
+                  <td className="px-3 py-2 text-slate-600 font-mono">
+                    {sensorText(p.sensor_data)}
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
