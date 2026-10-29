@@ -24,6 +24,15 @@ async function refreshDeviceCaches() {
   await Promise.all([loadDeviceCache(), loadDeviceStaticCache()]);
 }
 
+/** Ganti `unit` setiap entri peta dengan unit master_sensor bila `sensor_id` ada & dikenali. */
+function withMasterUnits(map, masterUnit) {
+  if (!Array.isArray(map)) return map;
+  return map.map((e) => {
+    const u = e?.sensor_id != null ? masterUnit.get(e.sensor_id) : null;
+    return u ? { ...e, unit: u } : e;
+  });
+}
+
 // =====================================================================
 // LIST
 // =====================================================================
@@ -94,6 +103,13 @@ export async function listDevices({ user, agencyIdFilter, search, approval = 'ap
   });
   const liveRowMap = new Map(liveRows.map((r) => [r.device_id, r]));
 
+  // Unit sensor ikut master_sensor (sensor_id dalam peta) — satu sumber untuk unit/threshold.
+  const masterUnit = new Map();
+  if (devices.some((d) => Array.isArray(d.sensor_unit))) {
+    const masters = await prisma.master_sensor.findMany({ select: { id: true, unit: true } });
+    for (const m of masters) masterUnit.set(m.id, m.unit);
+  }
+
   return devices.map((d) => {
     const live = liveRowMap.get(d.device_id);
     return {
@@ -114,7 +130,7 @@ export async function listDevices({ user, agencyIdFilter, search, approval = 'ap
       battery_level: live?.battery_level ?? null,
       sensor_data: live?.sensor_data ?? null,
       send_dt: live?.send_dt ?? null,
-      sensor_unit: d.sensor_unit, // peta register → nilai berlabel (frontend/lib/sensorDecode.js)
+      sensor_unit: withMasterUnits(d.sensor_unit, masterUnit), // peta register (frontend/lib/sensorDecode.js)
       last_seen_at: d.last_seen_at,
       need_approval: d.need_approval,
       date_approved: d.date_approved,

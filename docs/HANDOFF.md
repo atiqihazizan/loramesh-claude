@@ -95,8 +95,17 @@ Frontend: `src/lib/socket.js`, `src/hooks/useDeviceSocket.js` (dipanggil di `src
 - Peta contoh node 88880014: `docs/sensor-map-88880014.json` (susunan = tafsiran dari PDF POC_Registers + data sebenar; suhu UV254 guna /100).
 - Data server (baca sahaja): `devices.sensor_unit`/`sensor_data` semua NULL; `master_sensor` 27 baris, tiada COD/NH4+/DO/OIW/SS.
 - Ujian: `node --test frontend/src/lib/*.test.js backend/lib/device-type-fallback.test.js` (12 lulus); `vite build` berjaya.
-- BELUM: tulis peta ke `devices.sensor_unit` 88880014 di server (perlu kebenaran); deploy backend + frontend; sahkan unit COD/SS/NH4+/DO/OIW;
-  `historical/SensorTab.jsx` masih mentah; entri `master_sensor` untuk `sensor_id`; UI edit peta.
+- DB SERVER DIUBAH (2026-10-29, atas kebenaran pengguna): (1) backup `~/rollback/master_sensor-before-sensor-map.sql` (mysqldump master_sensor);
+  (2) `master_sensor` +6 baris id 28–33: COD(mg/L 0–500), Water Temperature(°C 0–60), Suspended Solids Turbidity(NTU 0–4000),
+  NH4+(mg/L 0–100), DO(mg/L 0–20), OIW(mg/L 0–200); id 11 Turbidity julat 0–1000, id 12 pH julat 0–14 (sebelum ini NULL).
+  JULAT/UNIT = nilai LAZIM, BELUM disahkan dengan datasheet vendor (PDF tiada julat/unit). (3) `devices.sensor_unit` 88880014 = peta
+  `docs/sensor-map-88880014.json` (9 entri, suhu /100 disahkan pengguna; sebelum itu NULL).
+  UNDO: `DELETE FROM master_sensor WHERE id BETWEEN 28 AND 33; UPDATE master_sensor SET min_value=NULL,max_value=NULL WHERE id IN (11,12);
+  UPDATE devices SET sensor_unit=NULL WHERE device_id='88880014';`
+- Backend `listDevices` ganti `unit` setiap entri peta dengan `master_sensor.unit` ikut `sensor_id` (satu sumber unit/threshold; min/max
+  dalam master untuk threshold masa depan — belum dipakai).
+- BELUM: sahkan paparan UI manusia; sahkan unit/julat dengan datasheet vendor; `historical/SensorTab.jsx` masih mentah; UI edit peta;
+  threshold/amaran; peta untuk device lain.
 - Deploy nanti: ikut bahagian 6 (backup `public` dahulu; backend `sudo git pull --ff-only` + restart `mesh-v2.service`; rollback ke tag v1.0.3).
 
 ## 8. Risiko terbuka
