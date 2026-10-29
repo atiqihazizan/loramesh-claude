@@ -370,13 +370,7 @@ export async function createDevice(payload, user) {
 
   // Update caches
   await refreshDeviceCaches();
-  if (agencyId) {
-    const agency = await prisma.agency.findUnique({
-      where: { id: agencyId },
-      select: { agency_token: true },
-    });
-    if (agency) assignDeviceToAgencyInCache(device.device_id, agency.agency_token);
-  }
+  if (agencyId) assignDeviceToAgencyInCache(device.device_id, agencyId);
 
   return getDeviceById(device.id, user);
 }
@@ -562,11 +556,7 @@ export async function removeDevice(id, user) {
   });
 
   // Update cache
-  const agency = await prisma.agency.findUnique({
-    where: { id: agencyId },
-    select: { agency_token: true },
-  });
-  if (agency) unassignDeviceFromAgencyInCache(device.device_id, agency.agency_token);
+  unassignDeviceFromAgencyInCache(device.device_id, agencyId);
 
   await refreshDeviceCaches();
 
