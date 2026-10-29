@@ -16,7 +16,6 @@
     "db:migrate:deploy": "prisma migrate deploy",
     "db:studio": "prisma studio",
     "db:seed": "node prisma/seed.js",
-    "migrate:from-legacy": "node scripts/migrate-from-legacy.js",
     "migrate:playback-tables": "node scripts/migrate-playback-tables.js",
     "verify-data": "node scripts/verify-data.js",
     "seed:pilot": "node scripts/seed-pilot-data.js",

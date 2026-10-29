@@ -85,6 +85,8 @@ Frontend: `src/lib/socket.js`, `src/hooks/useDeviceSocket.js` (dipanggil di `src
   Rollback backend: `cd /var/www/loramesh/mesh_v2_git && sudo git reset --hard v1.0.3 && sudo systemctl restart mesh-v2.service`.
 - Backup sebelum kerja ini: tag `v1.0.3` (= a68a6d9) di GitHub; server `/var/www/loramesh/mesh_v2_git` ff-pull ke a68a6d9 (hanya docs; tiada restart).
   Beza tinggal di server: ` D backend/scripts/migrate-from-legacy.js` (sedia ada, tidak dipulihkan — auto mode sekat `git checkout --` di server).
+  KEMAS KINI: pengguna putuskan skrip itu tidak digunakan lagi → dibuang dari repo (git rm + buang skrip npm `migrate:from-legacy`);
+  selepas server `git pull --ff-only`, beza ini hilang (server sudah memadamnya). Rollback fail: `git checkout <commit-sebelum> -- backend/scripts/migrate-from-legacy.js`.
 - Masalah 1: panel papar "—" semasa load kerana `listDevices` (REST) tak hantar data live. Fix: `backend/services/device-service.js`
   `listDevices` kini baca `live_tracking` (speed, heading, cpu_temp, battery_level, sensor_data, send_dt) + hantar `sensor_unit`.
   (Punca hasil analisis kod; BELUM disahkan di UI.)
