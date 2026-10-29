@@ -158,7 +158,11 @@ Frontend: `src/lib/socket.js`, `src/hooks/useDeviceSocket.js` (dipanggil di `src
     sebelum dipakai.
 - Deploy nanti: ikut bahagian 6 (backup `public` dahulu; backend `sudo git pull --ff-only` + restart `mesh-v2.service`; rollback ke tag v1.0.3).
 
-### 7c. Editor peta sensor (fasa 1) — LOKAL, BELUM deploy, BELUM dilihat pengguna (2026-10-29)
+### 7c. Editor peta sensor (fasa 1) — DIDEPLOY 2026-10-29 ~17:06 MYT (commit 450724b), BELUM dilihat/diuji pengguna di UI
+- DEPLOY: push 565516d→450724b; backup `~/rollback/public-before-450724b.tgz`; server `sudo git pull --ff-only` (bersih); build lokal → tar → scp → ekstrak
+  ke `backend/`; `sudo systemctl restart mesh-v2.service` (aktif, MQTT subscribe semula); `DevicesPage-DSoVzrt_.js` (mengandungi editor) dilayan di lora2u.com/v2.
+  Rollback frontend: `tar xzf ~/rollback/public-before-450724b.tgz -C /var/www/loramesh/mesh_v2_git/backend/` + hard refresh;
+  backend: `sudo git reset --hard 565516d && sudo systemctl restart mesh-v2.service`. Simpan peta dari UI BELUM diuji terhadap DB sebenar.
 - UI: `frontend/src/components/settings/SensorMapModal.jsx`, dibuka dari ikon "Sensor map" pada baris device di `pages/settings/DevicesPage.jsx`
   (ADMIN_AGENCY+ sama seperti Edit). Baris = urutan register; `idx` dikira automatik (int16 = 1, float32 = 2). Pilih master sensor (`GET /sensors`,
   semua pengguna log masuk), label, jenis/formula (raw, ÷10, ÷100, ÷1000, float32 swap/biasa, Unused), dp. Pratonton guna `sensor_data` terakhir;
