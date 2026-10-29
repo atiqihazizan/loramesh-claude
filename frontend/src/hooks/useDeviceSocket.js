@@ -24,39 +24,19 @@
 import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { connectSocket } from '../lib/socket.js';
+import { mergeDevicePatchIntoList } from '../lib/mergeDevicePatch.js';
 import { useAuthStore } from '../store/authStore.js';
 
 /**
  * Merge a partial device patch (keyed by device_id) into the
- * cached device list for the given agency.
- *
- * Only fields with a defined value overwrite the existing device —
- * an `undefined` field in the patch keeps the old value (so a
- * socket event missing a field does not wipe REST data).
+ * cached device list for the given agency. undefined/null fields
+ * keep the old value (see lib/mergeDevicePatch.js).
  */
 function mergeDevicePatch(queryClient, agencyId, patch) {
   const key = ['devices', agencyId];
   const current = queryClient.getQueryData(key);
-  if (!Array.isArray(current)) return;
-
-  // Strip undefined fields — keep only what the socket actually sent.
-  const clean = {};
-  for (const [k, v] of Object.entries(patch)) {
-    if (v !== undefined) clean[k] = v;
-  }
-
-  let found = false;
-  const next = current.map((d) => {
-    if (d.device_id !== clean.device_id) return d;
-    found = true;
-    // Defined socket fields overwrite; missing fields keep old value.
-    return { ...d, ...clean };
-  });
-
-  // If the device is not in the REST list yet, ignore the patch.
-  // (E2-markers-a decided: REST is the source of the initial set.)
-  if (!found) return;
-
+  const next = mergeDevicePatchIntoList(current, patch);
+  if (next === current) return;
   queryClient.setQueryData(key, next);
 }
 

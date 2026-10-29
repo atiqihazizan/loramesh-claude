@@ -28,6 +28,7 @@ import {
   rawPayloadHasExplicitStatus,
 } from '../lib/live-tracking-write.js';
 import { DATA_SOURCE, STATUS_LIVE } from '../config/constants.js';
+import { resolveDeviceTypeId } from '../lib/device-type-fallback.js';
 import { touchMqttPresence } from '../jobs/device-mqtt-presence.js';
 
 // =====================================================================
@@ -119,6 +120,9 @@ export async function processTracking(rawPayload, source, opts = {}) {
   // --- 4. ENRICH: info device dari cache ---
   const deviceMeta = getDeviceByDeviceId(data.device_id) || {};
   const staticStatus = getDeviceStaticStatus(data.device_id);
+
+  // Kod type payload tiada dalam master → pakai type device berdaftar
+  data.device_type_id = resolveDeviceTypeId(data.device_type_id, deviceMeta);
 
   // Kalau device static, guna posisi tetap dari cache (sensor static tak gerak)
   if (staticStatus?.is_static) {
