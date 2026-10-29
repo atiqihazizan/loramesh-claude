@@ -114,6 +114,11 @@ Frontend: `src/lib/socket.js`, `src/hooks/useDeviceSocket.js` (dipanggil di `src
   `~/rollback/public-before-e229e80.tgz`; bundle `index-Bd0UGv8R.js` dilayan di lora2u.com/v2; server git = e229e80, status bersih; tiada restart
   untuk frontend). Rollback frontend: `tar xzf ~/rollback/public-before-e229e80.tgz -C /var/www/loramesh/mesh_v2_git/backend/` + hard refresh.
   Rollback kod: `sudo git reset --hard v1.0.4` + restart.
+- PENGAWAL PANJANG (lokal, frontend BELUM deploy): `sensorDecode.js` `decodeSensors` kini pulang `null` jika panjang `sensor_data`
+  (elemen kosong di hujung diabaikan) TIDAK sama dengan panjang peta (= max(idx + 2 utk float32 / 1 utk int16)) → panel jatuh balik ke
+  paparan mentah, Historical papar "—" (bukan nilai palsu bagi susunan sensor lama/berbeza). AKIBAT: SEMUA register mesti dipetakan
+  (peta separa akan sentiasa ditolak) — UI Settings nanti perlu benarkan entri "tidak digunakan". 8 ujian sensorDecode lulus (19 keseluruhan).
+  Rancangan seterusnya (BELUM): peta berversi bertarikh berkuat kuasa supaya sejarah dinyahkod dengan peta zamannya (bersama UI Settings).
 - HISTORICAL KOSONG — PUNCA & TINDAKAN (2026-10-29 14:26 MYT): semua device statik `logging_enabled=0` → pipeline tak tulis playback →
   `playback_88880014` tidak wujud (log_mqtt ada 10,056 mesej 88880014 sejak 25 Okt). Atas kebenaran pengguna: `UPDATE devices SET
   logging_enabled=1 WHERE device_id='88880014'` (nilai lama 0 di server `~/rollback/logging-enabled-before.txt`) + restart `mesh-v2.service`

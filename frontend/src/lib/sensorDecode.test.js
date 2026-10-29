@@ -36,11 +36,29 @@ test('tanpa wordSwap susunan dibaca terus (high word dahulu)', () => {
   assert.equal(r[0].text, '3224.92');
 });
 
-test('register hilang/tidak sah → null, paparan —', () => {
-  const r = decodeSensors(['1'], [{ key: 'x', idx: 3, type: 'int16' }, { key: 'y', idx: 0, type: 'float32' }]);
-  assert.equal(r[0].value, null);
-  assert.equal(r[0].text, '—');
+test('nilai tidak sah (cth -1) dalam susunan sepadan → null, paparan —', () => {
+  const m = [{ key: 'a', idx: 0, type: 'int16' }, { key: 'y', idx: 1, type: 'float32' }];
+  const r = decodeSensors(['5', '-1', '-1'], m);
+  assert.equal(r[0].text, '5.00');
+  assert.equal(r[1].value, null);
   assert.equal(r[1].text, '—');
+});
+
+test('susunan lama lebih pendek (4 dan 6 elemen) ditolak, bukan dinyahkod palsu', () => {
+  assert.equal(decodeSensors(['3840', '46490', '17737', '64365'], MAP), null);
+  assert.equal(decodeSensors(['3840', '46490', '17737', '64365', '16903', ''], MAP), null);
+});
+
+test('susunan lebih panjang daripada peta ditolak', () => {
+  assert.equal(decodeSensors([...RAW.slice(0, 13), '1', ''], MAP), null);
+});
+
+test('elemen kosong di hujung diabaikan (13 atau 14 elemen sama sahaja)', () => {
+  const a = decodeSensors(RAW, MAP);
+  const b = decodeSensors(RAW.slice(0, 13), MAP);
+  const c = decodeSensors([...RAW, ''], MAP);
+  assert.deepEqual(b, a);
+  assert.deepEqual(c, a);
 });
 
 test('tiada peta atau data → null (jatuh balik ke paparan mentah)', () => {

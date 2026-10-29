@@ -37,13 +37,29 @@ function decodeOne(raw, entry) {
   return r * (entry.scale ?? 1);
 }
 
+/** Bilangan register yang peta perlukan (indeks tertinggi + panjang jenisnya). */
+function requiredLength(map) {
+  return Math.max(...map.map((e) => e.idx + (e.type === 'float32' ? 2 : 1)));
+}
+
+/** Panjang data tanpa elemen kosong di hujung (cth "" penutup dalam mesej node). */
+function effectiveLength(raw) {
+  let n = raw.length;
+  while (n > 0 && (raw[n - 1] === '' || raw[n - 1] === null || raw[n - 1] === undefined)) n--;
+  return n;
+}
+
 /**
  * @param {Array<string|number>} raw  sensor_data mentah
  * @param {Array<object>} map         devices.sensor_unit
- * @returns {Array<{key,label,unit,value,text}>|null}  null jika tiada peta/data
+ * @returns {Array<{key,label,unit,value,text}>|null}
+ *   null jika tiada peta/data, ATAU panjang data tidak sepadan dengan peta
+ *   (susunan sensor berbeza → nyahkod akan beri label/nilai palsu). Semua register
+ *   mesti dipetakan; pemanggil jatuh balik ke paparan mentah / "—".
  */
 export function decodeSensors(raw, map) {
   if (!Array.isArray(raw) || !Array.isArray(map) || map.length === 0) return null;
+  if (effectiveLength(raw) !== requiredLength(map)) return null;
   return map.map((entry) => {
     const value = decodeOne(raw, entry);
     const text = value === null ? '—' : value.toFixed(entry.dp ?? 2);
