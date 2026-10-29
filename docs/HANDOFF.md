@@ -128,8 +128,8 @@ Frontend: `src/lib/socket.js`, `src/hooks/useDeviceSocket.js` (dipanggil di `src
   Backup (root, mod 600): `~/rollback/playback_88880014-before-backfill.sql` (hanya baris sebelum isi semula).
   UNDO: `DELETE FROM playback_88880014 WHERE send_dt < '2026-10-29 06:27:02';` (baris asal selepas itu dikekalkan).
   BELUM: Boey 1–3 & Water Quality masih
-  logging 0 (tidak diubah, sebab asal tidak diketahui); paparan Historical di UI belum disahkan; kesan zon masa (send_dt disimpan UTC,
-  julat query Historical 00:00–23:59 — belum disemak sama ada ditafsir MYT atau UTC).
+  logging 0 (tidak diubah, sebab asal tidak diketahui); PAPARAN HISTORICAL DISAHKAN PENGGUNA (tangkapan skrin, 1,049 baris untuk 29 Okt, kolum berlabel+unit betul, nilai
+  sepadan nyahkod); zon masa OK — julat 00:00–23:59 ditafsir MYT dan masa dipapar MYT (baris 14:27:02 = mesej pertama selepas logging hidup).
 - Historical berlabel (frontend DIDEPLOY, paparan BELUM disahkan pengguna): `HistoricalSidebar.jsx` bawa `sensor_unit` device terpilih dalam `query.sensorUnit` →
   `HistoricalPage.jsx` → `SensorTab.jsx` paparkan SATU KOLUM per parameter (header label + unit, nilai dinyahkod `decodeSensors`); tiada
   peta → kolum "Sensor data" mentah seperti dahulu. Hanya `vite build` + 16 ujian lulus; TIADA ujian komponen & belum dilihat di UI.
