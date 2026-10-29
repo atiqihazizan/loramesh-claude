@@ -61,6 +61,14 @@ test('elemen kosong di hujung diabaikan (13 atau 14 elemen sama sahaja)', () => 
   assert.deepEqual(c, a);
 });
 
+test('entri skip dikira dalam panjang tetapi tidak dipaparkan', () => {
+  const m = [{ key: 'a', idx: 0, type: 'int16', scale: 0.1, dp: 1 }, { key: 's', idx: 1, type: 'skip' }];
+  const r = decodeSensors(['402', '9'], m);
+  assert.equal(r.length, 1);
+  assert.equal(r[0].text, '40.2');
+  assert.equal(decodeSensors(['402'], m), null);
+});
+
 test('tiada peta atau data → null (jatuh balik ke paparan mentah)', () => {
   assert.equal(decodeSensors(RAW, null), null);
   assert.equal(decodeSensors(RAW, []), null);

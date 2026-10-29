@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { Check, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Check, Pencil, Plus, SlidersHorizontal, Trash2 } from 'lucide-react';
 import { errMsg } from '../../lib/api.js';
 import { useAuthStore } from '../../store/authStore.js';
 import { useAgencies } from '../../hooks/useAgencies.js';
@@ -14,6 +14,7 @@ import SuperadminAgencyPicker from '../../components/settings/SuperadminAgencyPi
 import DataTable from '../../components/settings/DataTable.jsx';
 import ConfirmDialog from '../../components/settings/ConfirmDialog.jsx';
 import DeviceFormModal from '../../components/settings/DeviceFormModal.jsx';
+import SensorMapModal from '../../components/settings/SensorMapModal.jsx';
 
 export default function DevicesPage() {
   const isAgencyAdmin = useAuthStore((s) => s.isAgencyAdmin());
@@ -47,6 +48,7 @@ export default function DevicesPage() {
   const adminReady = !isSuperadmin || agencyTargetId != null;
 
   const [modal, setModal] = useState(null);
+  const [mapDevice, setMapDevice] = useState(null);
   const [formError, setFormError] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [actionError, setActionError] = useState(null);
@@ -173,6 +175,17 @@ export default function DevicesPage() {
                   ) : null}
                   <button
                     type="button"
+                    title="Sensor map"
+                    className="btn-ghost p-2"
+                    onClick={() => {
+                      setFormError(null);
+                      setMapDevice(row);
+                    }}
+                  >
+                    <SlidersHorizontal size={16} />
+                  </button>
+                  <button
+                    type="button"
                     title="Edit"
                     className="btn-ghost p-2"
                     onClick={() => {
@@ -225,6 +238,25 @@ export default function DevicesPage() {
                   }
                 }}
                 isSubmitting={isCreating || isUpdating}
+                submitError={formError}
+              />
+            ) : null}
+
+            {mapDevice ? (
+              <SensorMapModal
+                key={mapDevice.id}
+                device={mapDevice}
+                onClose={() => setMapDevice(null)}
+                onSave={async (sensor_unit) => {
+                  setFormError(null);
+                  try {
+                    await updateDevice({ id: mapDevice.id, patch: { sensor_unit } });
+                  } catch (err) {
+                    setFormError(err);
+                    throw err;
+                  }
+                }}
+                isSaving={isUpdating}
                 submitError={formError}
               />
             ) : null}

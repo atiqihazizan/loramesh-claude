@@ -1,7 +1,9 @@
 // services/device-service.js
 // Device CRUD. ADMIN_AGENCY manages devices in their agency; SUPERADMIN all.
 
+import { Prisma } from '@prisma/client';
 import prisma from '../lib/prisma.js';
+import { validateSensorMap } from '../lib/sensor-map.js';
 import { ROLES } from '../config/constants.js';
 import {
   loadDeviceCache,
@@ -540,6 +542,11 @@ export async function updateDevice(id, patch, user) {
   if (patch.is_static !== undefined) allowed.is_static = patch.is_static;
   if (patch.logging_enabled !== undefined) allowed.logging_enabled = patch.logging_enabled;
   if (patch.status !== undefined) allowed.status = patch.status;
+  if (patch.sensor_unit !== undefined) {
+    const masters = await prisma.master_sensor.findMany({ select: { id: true } });
+    const map = validateSensorMap(patch.sensor_unit, new Set(masters.map((m) => m.id)));
+    allowed.sensor_unit = map === null ? Prisma.DbNull : map;
+  }
   if (patch.type_id !== undefined) {
     if (patch.type_id === null) {
       allowed.type_id = null;

@@ -158,6 +158,21 @@ Frontend: `src/lib/socket.js`, `src/hooks/useDeviceSocket.js` (dipanggil di `src
     sebelum dipakai.
 - Deploy nanti: ikut bahagian 6 (backup `public` dahulu; backend `sudo git pull --ff-only` + restart `mesh-v2.service`; rollback ke tag v1.0.3).
 
+### 7c. Editor peta sensor (fasa 1) — LOKAL, BELUM deploy, BELUM dilihat pengguna (2026-10-29)
+- UI: `frontend/src/components/settings/SensorMapModal.jsx`, dibuka dari ikon "Sensor map" pada baris device di `pages/settings/DevicesPage.jsx`
+  (ADMIN_AGENCY+ sama seperti Edit). Baris = urutan register; `idx` dikira automatik (int16 = 1, float32 = 2). Pilih master sensor (`GET /sensors`,
+  semua pengguna log masuk), label, jenis/formula (raw, ÷10, ÷100, ÷1000, float32 swap/biasa, Unused), dp. Pratonton guna `sensor_data` terakhir;
+  bar padanan panjang peta vs data (hijau/kuning). Peta kosong → hantar `null` (kembali ke paparan mentah).
+- Backend: `backend/lib/sensor-map.js` (`validateSensorMap`) dipanggil dalam `updateDevice` (`device-service.js`) bagi `patch.sensor_unit`;
+  `null` → `Prisma.DbNull`. Peraturan: sensor_id wujud dalam master_sensor, type int16/float32/skip, scale 1/0.1/0.01/0.001, dp 0–6, key unik,
+  TIADA celah/pertindihan register (guna "skip"). `unit` tidak disimpan jika ada sensor_id (datang dari master semasa `listDevices`).
+- `sensorDecode.js`: entri `type:'skip'` dikira dalam panjang tetapi tidak dipaparkan; eksport `requiredLength`/`effectiveLength`; pilihan `ignoreLength`.
+- Ujian: `backend/lib/sensor-map.test.js` (5), `sensorDecode.test.js` (9) — lulus; `vite build` lulus; peta sebenar 88880014 lulus pengesah.
+  BELUM ada ujian komponen dan BELUM diuji klik di browser; tiada ujian `updateDevice` terhadap DB.
+- Had: tiada versi peta berkesan-tarikh (menyimpan peta baharu mengubah tafsiran data sejarah); tiada `category`; tiada `signed` int16.
+  Kunci (`key`) dijana semula daripada label setiap simpan.
+- Sahkan: `cd backend && node --test lib/*.test.js`; `cd frontend && node --test src/lib/*.test.js && npx vite build`.
+
 ## 8. Risiko terbuka
 - Node static hanya emit bila ada mesej MQTT → UI "nampak statik" itu normal.
 - Throttle emit 2s membuang mesej rapat; broker putus sekejap tanpa petunjuk UI.
