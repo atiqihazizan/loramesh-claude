@@ -75,6 +75,23 @@ Frontend: `src/lib/socket.js`, `src/hooks/useDeviceSocket.js` (dipanggil di `src
 - Siasat broker MQTT ECONNREFUSED (07:06, 07:44) — berasingan.
 - Pilihan: seragamkan key `useAgencyDevices` supaya Settings dapat live update (bukan punca masalah peta).
 
+## 7b. Fitur: panel device — data live terakhir + sensor_data berlabel (2026-10-29, BELUM deploy)
+- Backup sebelum kerja ini: tag `v1.0.3` (= a68a6d9) di GitHub; server `/var/www/loramesh/mesh_v2_git` ff-pull ke a68a6d9 (hanya docs; tiada restart).
+  Beza tinggal di server: ` D backend/scripts/migrate-from-legacy.js` (sedia ada, tidak dipulihkan — auto mode sekat `git checkout --` di server).
+- Masalah 1: panel papar "—" semasa load kerana `listDevices` (REST) tak hantar data live. Fix: `backend/services/device-service.js`
+  `listDevices` kini baca `live_tracking` (speed, heading, cpu_temp, battery_level, sensor_data, send_dt) + hantar `sensor_unit`.
+  (Punca hasil analisis kod; BELUM disahkan di UI.)
+- Masalah 2: sensor_data mentah. Fix: `frontend/src/lib/sensorDecode.js` (+`.test.js`, 5 ujian) tukar array register → `[{key,label,unit,value,text}]`
+  ikut peta per-device dalam `devices.sensor_unit` (JSON). `frontend/src/map/DeviceDetailPanel.jsx` papar satu baris label+nilai;
+  tiada peta → paparan mentah lama. Entri peta: `{key,label,unit,idx,type:int16|float32,scale,wordSwap,dp,sensor_id?}`;
+  float32+wordSwap: register pertama = low word (contoh pengguna 36536,17737 → 3224.92). `scale` 0.1 = "/10", 0.01 = "/100" (ikut sensor).
+- Peta contoh node 88880014: `docs/sensor-map-88880014.json` (susunan = tafsiran dari PDF POC_Registers + data sebenar; suhu UV254 guna /100).
+- Data server (baca sahaja): `devices.sensor_unit`/`sensor_data` semua NULL; `master_sensor` 27 baris, tiada COD/NH4+/DO/OIW/SS.
+- Ujian: `node --test frontend/src/lib/*.test.js backend/lib/device-type-fallback.test.js` (12 lulus); `vite build` berjaya.
+- BELUM: tulis peta ke `devices.sensor_unit` 88880014 di server (perlu kebenaran); deploy backend + frontend; sahkan unit COD/SS/NH4+/DO/OIW;
+  `historical/SensorTab.jsx` masih mentah; entri `master_sensor` untuk `sensor_id`; UI edit peta.
+- Deploy nanti: ikut bahagian 6 (backup `public` dahulu; backend `sudo git pull --ff-only` + restart `mesh-v2.service`; rollback ke tag v1.0.3).
+
 ## 8. Risiko terbuka
 - Node static hanya emit bila ada mesej MQTT → UI "nampak statik" itu normal.
 - Throttle emit 2s membuang mesej rapat; broker putus sekejap tanpa petunjuk UI.

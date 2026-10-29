@@ -19,6 +19,7 @@ import { useMapContext } from './MapContext.jsx';
 import { useDevices } from '../hooks/useDevices.js';
 import { statusColor } from './DeviceMarker.jsx';
 import { deviceStatusLabel } from '../lib/deviceStatus.js';
+import { decodeSensors } from '../lib/sensorDecode.js';
 
 function formatTime(iso) {
   if (!iso) return '—';
@@ -87,6 +88,8 @@ export default function DeviceDetailPanel() {
   const name = device.name || device.device_id;
   // Medan dari /api/devices bernama `type` (bukan device_type).
   const typeName = device.type?.name || '—';
+  // Null jika device tiada peta register → jatuh balik ke paparan mentah.
+  const decoded = decodeSensors(device.sensor_data, device.sensor_unit);
 
   return (
     <div
@@ -146,7 +149,7 @@ export default function DeviceDetailPanel() {
       <div
         className="transition-all duration-300 ease-out"
         style={{
-          maxHeight: stage >= 2 ? (minimized ? 120 : 400) : 0,
+          maxHeight: stage >= 2 ? (minimized ? 120 : 640) : 0,
           opacity: stage >= 2 ? 1 : 0,
         }}
       >
@@ -177,9 +180,18 @@ export default function DeviceDetailPanel() {
                 <Row label="CPU temp" mono>
                   {num(device.cpu_temp, 1, ' °C')}
                 </Row>
-                <Row label="Sensor" mono last>
-                  {sensorText(device.sensor_data)}
-                </Row>
+                {decoded ? (
+                  decoded.map((s, i) => (
+                    <Row key={s.key} label={s.label} mono last={i === decoded.length - 1}>
+                      {s.text}
+                      {s.value !== null && s.unit ? ` ${s.unit}` : ''}
+                    </Row>
+                  ))
+                ) : (
+                  <Row label="Sensor" mono last>
+                    {sensorText(device.sensor_data)}
+                  </Row>
+                )}
               </>
             )}
           </tbody>

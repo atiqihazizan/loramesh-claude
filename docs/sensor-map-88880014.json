@@ -1,0 +1,11 @@
+[
+  { "key": "turbidity", "label": "Turbidity", "unit": "NTU", "idx": 0, "type": "int16", "scale": 0.1, "dp": 1, "sensor_id": 11 },
+  { "key": "cod", "label": "COD", "unit": "", "idx": 1, "type": "int16", "scale": 0.1, "dp": 1 },
+  { "key": "temp", "label": "Suhu", "unit": "°C", "idx": 2, "type": "int16", "scale": 0.01, "dp": 2, "sensor_id": 1 },
+  { "key": "ph", "label": "pH", "unit": "pH", "idx": 3, "type": "float32", "wordSwap": true, "dp": 2, "sensor_id": 12 },
+  { "key": "ss_turb", "label": "SS Turbidity", "unit": "", "idx": 5, "type": "float32", "wordSwap": true, "dp": 2 },
+  { "key": "ss_temp", "label": "SS Suhu", "unit": "°C", "idx": 7, "type": "float32", "wordSwap": true, "dp": 2, "sensor_id": 1 },
+  { "key": "nh4", "label": "NH4+", "unit": "", "idx": 9, "type": "float32", "wordSwap": true, "dp": 2 },
+  { "key": "do", "label": "DO", "unit": "", "idx": 11, "type": "int16", "scale": 0.01, "dp": 2 },
+  { "key": "oiw", "label": "OIW", "unit": "", "idx": 12, "type": "int16", "scale": 0.01, "dp": 2 }
+]

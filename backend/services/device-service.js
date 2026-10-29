@@ -81,28 +81,48 @@ export async function listDevices({ user, agencyIdFilter, search, approval = 'ap
   const deviceIds = devices.map((d) => d.device_id);
   const liveRows = await prisma.live_tracking.findMany({
     where: { device_id: { in: deviceIds } },
-    select: { device_id: true, status_live: true },
+    select: {
+      device_id: true,
+      status_live: true,
+      speed: true,
+      heading: true,
+      cpu_temp: true,
+      battery_level: true,
+      sensor_data: true,
+      send_dt: true,
+    },
   });
-  const liveMap = new Map(liveRows.map((r) => [r.device_id, r.status_live]));
+  const liveRowMap = new Map(liveRows.map((r) => [r.device_id, r]));
 
-  return devices.map((d) => ({
-    id: d.id,
-    device_id: d.device_id,
-    device_mac: d.device_mac,
-    name: d.name,
-    type: d.device_type,
-    status: liveMap.get(d.device_id) ?? 'offline', // status_live untuk marker map
-    is_static: d.is_static,
-    logging_enabled: d.logging_enabled,
-    latitude: d.latitude,
-    longitude: d.longitude,
-    last_seen_at: d.last_seen_at,
-    need_approval: d.need_approval,
-    date_approved: d.date_approved,
-    agencies: d.device_agencies.map((da) => da.agency),
-    active: d.device_agencies.length > 0, // aktif = ada keahlian agensi aktif
-    created_at: d.created_at,
-  }));
+  return devices.map((d) => {
+    const live = liveRowMap.get(d.device_id);
+    return {
+      id: d.id,
+      device_id: d.device_id,
+      device_mac: d.device_mac,
+      name: d.name,
+      type: d.device_type,
+      status: live?.status_live ?? 'offline', // status_live untuk marker map
+      is_static: d.is_static,
+      logging_enabled: d.logging_enabled,
+      latitude: d.latitude,
+      longitude: d.longitude,
+      // Data live terakhir — supaya panel terus berisi sebelum socket masuk.
+      speed: live?.speed ?? null,
+      heading: live?.heading ?? null,
+      cpu_temp: live?.cpu_temp ?? null,
+      battery_level: live?.battery_level ?? null,
+      sensor_data: live?.sensor_data ?? null,
+      send_dt: live?.send_dt ?? null,
+      sensor_unit: d.sensor_unit, // peta register → nilai berlabel (frontend/lib/sensorDecode.js)
+      last_seen_at: d.last_seen_at,
+      need_approval: d.need_approval,
+      date_approved: d.date_approved,
+      agencies: d.device_agencies.map((da) => da.agency),
+      active: d.device_agencies.length > 0, // aktif = ada keahlian agensi aktif
+      created_at: d.created_at,
+    };
+  });
 }
 
 // =====================================================================
