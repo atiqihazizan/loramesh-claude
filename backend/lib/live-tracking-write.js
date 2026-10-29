@@ -64,7 +64,8 @@ export async function persistLiveTrackingSnapshot({ liveRow, data, staticStatus 
       transmission_type: liveRow.transmission_type,
       device_model: liveRow.device_model,
       device_os: liveRow.device_os,
-      sensor_data: liveRow.sensor_data,
+      // Mesej tanpa sensor_data (cth status) jangan padam nilai terakhir.
+      ...(liveRow.sensor_data != null ? { sensor_data: liveRow.sensor_data } : {}),
       send_dt: liveRow.send_dt,
       node_dt: liveRow.node_dt,
       received_at: liveRow.received_at,

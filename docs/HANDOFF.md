@@ -110,6 +110,9 @@ Frontend: `src/lib/socket.js`, `src/hooks/useDeviceSocket.js` (dipanggil di `src
 - UI disahkan pengguna (2026-10-29): panel Boey 4 papar senarai berlabel dengan betul.
 - BELUM: sahkan unit/julat dengan datasheet vendor; `historical/SensorTab.jsx` masih mentah; UI edit peta;
   threshold/amaran; peta untuk device lain.
+- FIX (lokal, BELUM deploy): `backend/lib/live-tracking-write.js` upsert `update` tidak lagi menimpa `live_tracking.sensor_data` dengan null bila
+  payload tiada sensor_data (sebelum ini mesej status boleh memadam nilai terakhir → refresh papar "—"). Hanya `sensor_data`; medan lain
+  (cpu_temp, speed, dll.) masih ditimpa null — BELUM disemak/diubah. Tiada ujian automatik (modul import prisma); disahkan sintaks sahaja.
 - CADANGAN reka bentuk (BELUM dibuat, catatan perbincangan):
   - Peta register per-device (`devices.sensor_unit`) sudah mengasingkan sensor antara device (water quality / hujan / cuaca); `master_sensor`
     = katalog (nama, unit, julat) sahaja. Data GPS (lat/lon/speed/heading) bukan sensor, kekal medan sendiri.
