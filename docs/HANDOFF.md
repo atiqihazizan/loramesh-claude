@@ -119,7 +119,15 @@ Frontend: `src/lib/socket.js`, `src/hooks/useDeviceSocket.js` (dipanggil di `src
   logging_enabled=1 WHERE device_id='88880014'` (nilai lama 0 di server `~/rollback/logging-enabled-before.txt`) + restart `mesh-v2.service`
   (cache device-static dimuat ketika startup sahaja — UPDATE terus DB tanpa restart/PATCH API tidak berkesan). Disahkan: `playback_88880014` dicipta,
   baris pertama 06:27:02 UTC (14:27 MYT), metadata didaftar. UNDO: `UPDATE ... logging_enabled=0` + restart.
-  BELUM: isi semula sejarah 25–29 Okt dari `log_mqtt` ke `playback_88880014` (pilihan, belum diputuskan); Boey 1–3 & Water Quality masih
+  ISI SEMULA SEJARAH (14:30 MYT, atas kebenaran pengguna): skrip sementara di server (kini DIPADAM; salinan tiada dalam git) guna kod aplikasi
+  (`normalizeTrackingData` + `toPlaybackRow`, koordinat statik dari `devices`) menulis 8,698 baris dari `log_mqtt` (88880014) ke
+  `playback_88880014`; sempadan = `send_dt` < baris playback terawal (elak pendua). Hasil: 8,704 baris, 2026-10-25 16:43Z → semasa; taburan hari
+  sepadan `log_mqtt`. HANYA susunan `sensor_data` 14 elemen (padan peta semasa) diisi; 1,360 baris susunan lama (6 elemen: 281, 4 elemen: 1,079;
+  25–26 Okt, tetapan sensor berbeza) DILANGKAU kerana akan dinyahkod salah — masih ada dalam `log_mqtt`. `received_at` baris isi semula = masa
+  isi semula (bukan masa terima sebenar; `log_mqtt.received_at` UTC vs playback guna jam DB — beza 8 jam, jangan banding terus).
+  Backup (root, mod 600): `~/rollback/playback_88880014-before-backfill.sql` (hanya baris sebelum isi semula).
+  UNDO: `DELETE FROM playback_88880014 WHERE send_dt < '2026-10-29 06:27:02';` (baris asal selepas itu dikekalkan).
+  BELUM: Boey 1–3 & Water Quality masih
   logging 0 (tidak diubah, sebab asal tidak diketahui); paparan Historical di UI belum disahkan; kesan zon masa (send_dt disimpan UTC,
   julat query Historical 00:00–23:59 — belum disemak sama ada ditafsir MYT atau UTC).
 - Historical berlabel (frontend DIDEPLOY, paparan BELUM disahkan pengguna): `HistoricalSidebar.jsx` bawa `sensor_unit` device terpilih dalam `query.sensorUnit` →
