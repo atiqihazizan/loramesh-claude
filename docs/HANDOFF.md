@@ -113,8 +113,11 @@ Frontend: `src/lib/socket.js`, `src/hooks/useDeviceSocket.js` (dipanggil di `src
 - BELUM: sahkan unit/julat dengan datasheet vendor; `historical/SensorTab.jsx` masih mentah; UI edit peta;
   threshold/amaran; peta untuk device lain.
 - FIX (lokal, BELUM deploy): `backend/lib/live-tracking-write.js` upsert `update` tidak lagi menimpa `live_tracking.sensor_data` dengan null bila
-  payload tiada sensor_data (sebelum ini mesej status boleh memadam nilai terakhir → refresh papar "—"). Hanya `sensor_data`; medan lain
-  (cpu_temp, speed, dll.) masih ditimpa null — BELUM disemak/diubah. Tiada ujian automatik (modul import prisma); disahkan sintaks sahaja.
+  payload tiada sensor_data (sebelum ini mesej status boleh memadam nilai terakhir → refresh papar "—"). DIKEMAS KINI (lokal, BELUM deploy): `backend/lib/present-fields.js`
+  (`pickPresent`, `KEEP_LAST_KEYS = speed, cpu_temp, sensor_data`) kini dipakai untuk upsert `live_tracking` DAN `devices.updateMany`
+  (speed/cpu_temp) — mesej tanpa medan itu kekal nilai lama (keputusan pengguna: ia bukan dari sensor_data). Ujian `present-fields.test.js` (4);
+  `live-tracking-write.js` sendiri hanya disahkan sintaks. Medan lain (heading, battery_level, motion_status, lat/lon) masih ditimpa null.
+  Skrip npm tanpa fail (`migrate:playback-tables`, `verify-data`, `seed:pilot`) dibuang dari `backend/package.json` (tiada rujukan lain).
 - CADANGAN reka bentuk (BELUM dibuat, catatan perbincangan):
   - Peta register per-device (`devices.sensor_unit`) sudah mengasingkan sensor antara device (water quality / hujan / cuaca); `master_sensor`
     = katalog (nama, unit, julat) sahaja. Data GPS (lat/lon/speed/heading) bukan sensor, kekal medan sendiri.

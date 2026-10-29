@@ -4,6 +4,7 @@
 import prisma from './prisma.js';
 import { STATUS_LIVE } from '../config/constants.js';
 import { updateDeviceInCache } from './cache/device-cache.js';
+import { pickPresent, KEEP_LAST_KEYS } from './present-fields.js';
 
 export function hasLiveCoords(latitude, longitude) {
   return latitude != null && longitude != null;
@@ -54,18 +55,16 @@ export async function persistLiveTrackingSnapshot({ liveRow, data, staticStatus 
       device_type_id: liveRow.device_type_id,
       latitude: liveRow.latitude,
       longitude: liveRow.longitude,
-      speed: liveRow.speed,
       heading: liveRow.heading,
       accuracy: liveRow.accuracy,
       status_live: liveRow.status_live,
       motion_status: liveRow.motion_status,
-      cpu_temp: liveRow.cpu_temp,
       battery_level: liveRow.battery_level,
       transmission_type: liveRow.transmission_type,
       device_model: liveRow.device_model,
       device_os: liveRow.device_os,
-      // Mesej tanpa sensor_data (cth status) jangan padam nilai terakhir.
-      ...(liveRow.sensor_data != null ? { sensor_data: liveRow.sensor_data } : {}),
+      // speed/cpu_temp/sensor_data: mesej tanpa medan ini (cth status) tidak menimpa nilai terakhir.
+      ...pickPresent(liveRow, KEEP_LAST_KEYS),
       send_dt: liveRow.send_dt,
       node_dt: liveRow.node_dt,
       received_at: liveRow.received_at,
@@ -79,9 +78,8 @@ export async function persistLiveTrackingSnapshot({ liveRow, data, staticStatus 
       status: data.status_live,
       send_dt: data.send_dt,
       node_dt: data.node_dt,
-      cpu_temp: data.cpu_temp,
-      speed: data.speed,
       heading: data.heading,
+      ...pickPresent(data, ['speed', 'cpu_temp']),
       ...(staticStatus?.is_static
         ? {}
         : { latitude: data.latitude, longitude: data.longitude }),
