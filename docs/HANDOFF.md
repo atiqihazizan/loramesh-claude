@@ -175,6 +175,9 @@ Frontend: `src/lib/socket.js`, `src/hooks/useDeviceSocket.js` (dipanggil di `src
   BELUM ada ujian komponen dan BELUM diuji klik di browser; tiada ujian `updateDevice` terhadap DB.
 - Had: tiada versi peta berkesan-tarikh (menyimpan peta baharu mengubah tafsiran data sejarah); tiada `category`; tiada `signed` int16.
   Kunci (`key`) dijana semula daripada label setiap simpan.
+- SEMAKAN `POC_Registers1.pdf` (pembetulan vendor, 2026-10-29): susunan 13 register, formula (/10, /10, /100 suhu UV254; IEEE754 big-endian + word swap
+  untuk pH, SS turbidity, SS suhu, NH4+; /100 DO & OIW) SEMUA sepadan dengan peta semasa. Beza tinggal: unit OIW dalam PDF = ppm, `master_sensor` id 33 = mg/L
+  (BELUM diubah). Unit turbidity NTU/FNU/FTU masih bertanda "??" oleh vendor sendiri.
 - Sahkan: `cd backend && node --test lib/*.test.js`; `cd frontend && node --test src/lib/*.test.js && npx vite build`.
 
 ## 8. Risiko terbuka
