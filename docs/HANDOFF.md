@@ -114,6 +114,14 @@ Frontend: `src/lib/socket.js`, `src/hooks/useDeviceSocket.js` (dipanggil di `src
   `~/rollback/public-before-e229e80.tgz`; bundle `index-Bd0UGv8R.js` dilayan di lora2u.com/v2; server git = e229e80, status bersih; tiada restart
   untuk frontend). Rollback frontend: `tar xzf ~/rollback/public-before-e229e80.tgz -C /var/www/loramesh/mesh_v2_git/backend/` + hard refresh.
   Rollback kod: `sudo git reset --hard v1.0.4` + restart.
+- HISTORICAL KOSONG — PUNCA & TINDAKAN (2026-10-29 14:26 MYT): semua device statik `logging_enabled=0` → pipeline tak tulis playback →
+  `playback_88880014` tidak wujud (log_mqtt ada 10,056 mesej 88880014 sejak 25 Okt). Atas kebenaran pengguna: `UPDATE devices SET
+  logging_enabled=1 WHERE device_id='88880014'` (nilai lama 0 di server `~/rollback/logging-enabled-before.txt`) + restart `mesh-v2.service`
+  (cache device-static dimuat ketika startup sahaja — UPDATE terus DB tanpa restart/PATCH API tidak berkesan). Disahkan: `playback_88880014` dicipta,
+  baris pertama 06:27:02 UTC (14:27 MYT), metadata didaftar. UNDO: `UPDATE ... logging_enabled=0` + restart.
+  BELUM: isi semula sejarah 25–29 Okt dari `log_mqtt` ke `playback_88880014` (pilihan, belum diputuskan); Boey 1–3 & Water Quality masih
+  logging 0 (tidak diubah, sebab asal tidak diketahui); paparan Historical di UI belum disahkan; kesan zon masa (send_dt disimpan UTC,
+  julat query Historical 00:00–23:59 — belum disemak sama ada ditafsir MYT atau UTC).
 - Historical berlabel (frontend DIDEPLOY, paparan BELUM disahkan pengguna): `HistoricalSidebar.jsx` bawa `sensor_unit` device terpilih dalam `query.sensorUnit` →
   `HistoricalPage.jsx` → `SensorTab.jsx` paparkan SATU KOLUM per parameter (header label + unit, nilai dinyahkod `decodeSensors`); tiada
   peta → kolum "Sensor data" mentah seperti dahulu. Hanya `vite build` + 16 ujian lulus; TIADA ujian komponen & belum dilihat di UI.
