@@ -75,7 +75,11 @@ Frontend: `src/lib/socket.js`, `src/hooks/useDeviceSocket.js` (dipanggil di `src
 - Siasat broker MQTT ECONNREFUSED (07:06, 07:44) — berasingan.
 - Pilihan: seragamkan key `useAgencyDevices` supaya Settings dapat live update (bukan punca masalah peta).
 
-## 7b. Fitur: panel device — data live terakhir + sensor_data berlabel (2026-10-29, BELUM deploy)
+## 7b. Fitur: panel device — data live terakhir + sensor_data berlabel (2026-10-29)
+- STATUS DEPLOY: commit 6c3a1a2 di-push ke GitHub; BACKEND dideploy ke server (11:58 MYT: `sudo git pull --ff-only` a68a6d9→6c3a1a2 +
+  `sudo systemctl restart mesh-v2.service`; servis aktif, MQTT connect). Disahkan: `listDevices` di server pulang speed/cpu_temp/send_dt/
+  sensor_data untuk 88880014 (`sensor_unit` masih null). FRONTEND (`backend/public`) BELUM dideploy; peta BELUM ditulis ke DB.
+  Rollback backend: `cd /var/www/loramesh/mesh_v2_git && sudo git reset --hard v1.0.3 && sudo systemctl restart mesh-v2.service`.
 - Backup sebelum kerja ini: tag `v1.0.3` (= a68a6d9) di GitHub; server `/var/www/loramesh/mesh_v2_git` ff-pull ke a68a6d9 (hanya docs; tiada restart).
   Beza tinggal di server: ` D backend/scripts/migrate-from-legacy.js` (sedia ada, tidak dipulihkan — auto mode sekat `git checkout --` di server).
 - Masalah 1: panel papar "—" semasa load kerana `listDevices` (REST) tak hantar data live. Fix: `backend/services/device-service.js`
