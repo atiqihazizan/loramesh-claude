@@ -104,6 +104,9 @@ Frontend: `src/lib/socket.js`, `src/hooks/useDeviceSocket.js` (dipanggil di `src
   UPDATE devices SET sensor_unit=NULL WHERE device_id='88880014';`
 - Backend `listDevices` ganti `unit` setiap entri peta dengan `master_sensor.unit` ikut `sensor_id` (satu sumber unit/threshold; min/max
   dalam master untuk threshold masa depan — belum dipakai).
+- DEPLOY (12:35 MYT): backend ke 0b3643a (`sudo git pull --ff-only` + restart `mesh-v2.service`, aktif, MQTT connect). Disahkan melalui
+  `listDevices` di server: 9 entri peta 88880014 dengan unit dari master_sensor. Frontend tidak diubah (bundle index-Hl9VtMt1).
+  Rollback backend: `sudo git reset --hard 6c3a1a2` (atau v1.0.3) + restart; kemudian UNDO DB di atas jika perlu.
 - BELUM: sahkan paparan UI manusia; sahkan unit/julat dengan datasheet vendor; `historical/SensorTab.jsx` masih mentah; UI edit peta;
   threshold/amaran; peta untuk device lain.
 - Deploy nanti: ikut bahagian 6 (backup `public` dahulu; backend `sudo git pull --ff-only` + restart `mesh-v2.service`; rollback ke tag v1.0.3).
