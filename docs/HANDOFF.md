@@ -107,8 +107,18 @@ Frontend: `src/lib/socket.js`, `src/hooks/useDeviceSocket.js` (dipanggil di `src
 - DEPLOY (12:35 MYT): backend ke 0b3643a (`sudo git pull --ff-only` + restart `mesh-v2.service`, aktif, MQTT connect). Disahkan melalui
   `listDevices` di server: 9 entri peta 88880014 dengan unit dari master_sensor. Frontend tidak diubah (bundle index-Hl9VtMt1).
   Rollback backend: `sudo git reset --hard 6c3a1a2` (atau v1.0.3) + restart; kemudian UNDO DB di atas jika perlu.
-- BELUM: sahkan paparan UI manusia; sahkan unit/julat dengan datasheet vendor; `historical/SensorTab.jsx` masih mentah; UI edit peta;
+- UI disahkan pengguna (2026-10-29): panel Boey 4 papar senarai berlabel dengan betul.
+- BELUM: sahkan unit/julat dengan datasheet vendor; `historical/SensorTab.jsx` masih mentah; UI edit peta;
   threshold/amaran; peta untuk device lain.
+- CADANGAN reka bentuk (BELUM dibuat, catatan perbincangan):
+  - Peta register per-device (`devices.sensor_unit`) sudah mengasingkan sensor antara device (water quality / hujan / cuaca); `master_sensor`
+    = katalog (nama, unit, julat) sahaja. Data GPS (lat/lon/speed/heading) bukan sensor, kekal medan sendiri.
+  - Tambah lajur `master_sensor.category` (VARCHAR, nullable; cth water_quality/weather/level) HANYA bila UI pemilih sensor dibina — migrasi
+    Prisma + SQL server, selamat (nullable).
+  - Elak satu baris master untuk dua konteks (cth Temperature id 1 = suhu persekitaran vs Water Temperature id 29); asingkan baris.
+  - Pilihan kemudian: templat peta lalai per jenis device (lajur JSON pada `device_type`) disalin ke device baharu.
+  - HAD `sensorDecode.js`: register int16 dibaca TANPA TANDA (0–65535); sensor nilai negatif (suhu <0 °C) perlu pilihan `signed` + ujian
+    sebelum dipakai.
 - Deploy nanti: ikut bahagian 6 (backup `public` dahulu; backend `sudo git pull --ff-only` + restart `mesh-v2.service`; rollback ke tag v1.0.3).
 
 ## 8. Risiko terbuka
