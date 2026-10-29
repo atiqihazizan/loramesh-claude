@@ -114,7 +114,8 @@ Frontend: `src/lib/socket.js`, `src/hooks/useDeviceSocket.js` (dipanggil di `src
   `~/rollback/public-before-e229e80.tgz`; bundle `index-Bd0UGv8R.js` dilayan di lora2u.com/v2; server git = e229e80, status bersih; tiada restart
   untuk frontend). Rollback frontend: `tar xzf ~/rollback/public-before-e229e80.tgz -C /var/www/loramesh/mesh_v2_git/backend/` + hard refresh.
   Rollback kod: `sudo git reset --hard v1.0.4` + restart.
-- PENGAWAL PANJANG (lokal, frontend BELUM deploy): `sensorDecode.js` `decodeSensors` kini pulang `null` jika panjang `sensor_data`
+- PENGAWAL PANJANG (commit 565516d; frontend DIDEPLOY ~14:55 MYT: backup `~/rollback/public-before-565516d.tgz`, bundle `index-D-_B_fX7.js`
+  dilayan, server git = 565516d bersih, tiada restart; rollback frontend: `tar xzf` backup itu ke `backend/` + hard refresh; paparan UI BELUM disahkan pengguna): `sensorDecode.js` `decodeSensors` kini pulang `null` jika panjang `sensor_data`
   (elemen kosong di hujung diabaikan) TIDAK sama dengan panjang peta (= max(idx + 2 utk float32 / 1 utk int16)) → panel jatuh balik ke
   paparan mentah, Historical papar "—" (bukan nilai palsu bagi susunan sensor lama/berbeza). AKIBAT: SEMUA register mesti dipetakan
   (peta separa akan sentiasa ditolak) — UI Settings nanti perlu benarkan entri "tidak digunakan". 8 ujian sensorDecode lulus (19 keseluruhan).
