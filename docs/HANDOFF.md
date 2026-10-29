@@ -177,7 +177,9 @@ Frontend: `src/lib/socket.js`, `src/hooks/useDeviceSocket.js` (dipanggil di `src
   Kunci (`key`) dijana semula daripada label setiap simpan.
 - SEMAKAN `POC_Registers1.pdf` (pembetulan vendor, 2026-10-29): susunan 13 register, formula (/10, /10, /100 suhu UV254; IEEE754 big-endian + word swap
   untuk pH, SS turbidity, SS suhu, NH4+; /100 DO & OIW) SEMUA sepadan dengan peta semasa. Beza tinggal: unit OIW dalam PDF = ppm, `master_sensor` id 33 = mg/L
-  (BELUM diubah). Unit turbidity NTU/FNU/FTU masih bertanda "??" oleh vendor sendiri.
+  → DIUBAH 2026-10-29 atas kebenaran pengguna: `UPDATE master_sensor SET unit='ppm' WHERE id=33` (1 baris; julat 0–200 tidak berubah). Backup
+  `~/rollback/master_sensor-before-oiw-ppm.sql` (server, mod 600). UNDO: `UPDATE master_sensor SET unit='mg/L' WHERE id=33`. Tiada restart (unit dibaca
+  setiap `listDevices`). Dokumen `docs/sensor-map-88880014.json` masih tulis mg/L untuk oiw (hanya rujukan; unit sebenar dari master). Unit turbidity NTU/FNU/FTU masih bertanda "??" oleh vendor sendiri.
 - Sahkan: `cd backend && node --test lib/*.test.js`; `cd frontend && node --test src/lib/*.test.js && npx vite build`.
 
 ## 8. Risiko terbuka

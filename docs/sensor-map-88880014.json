@@ -7,5 +7,5 @@
   { "key": "ss_temp", "label": "SS Suhu", "sensor_id": 29, "unit": "°C", "idx": 7, "type": "float32", "wordSwap": true, "dp": 2 },
   { "key": "nh4", "label": "NH4+", "sensor_id": 31, "unit": "mg/L", "idx": 9, "type": "float32", "wordSwap": true, "dp": 2 },
   { "key": "do", "label": "DO", "sensor_id": 32, "unit": "mg/L", "idx": 11, "type": "int16", "scale": 0.01, "dp": 2 },
-  { "key": "oiw", "label": "OIW", "sensor_id": 33, "unit": "mg/L", "idx": 12, "type": "int16", "scale": 0.01, "dp": 2 }
+  { "key": "oiw", "label": "OIW", "sensor_id": 33, "unit": "ppm", "idx": 12, "type": "int16", "scale": 0.01, "dp": 2 }
 ]
