@@ -110,7 +110,11 @@ Frontend: `src/lib/socket.js`, `src/hooks/useDeviceSocket.js` (dipanggil di `src
   `listDevices` di server: 9 entri peta 88880014 dengan unit dari master_sensor. Frontend tidak diubah (bundle index-Hl9VtMt1).
   Rollback backend: `sudo git reset --hard 6c3a1a2` (atau v1.0.3) + restart; kemudian UNDO DB di atas jika perlu.
 - UI disahkan pengguna (2026-10-29): panel Boey 4 papar senarai berlabel dengan betul.
-- Historical berlabel (lokal, BELUM deploy frontend): `HistoricalSidebar.jsx` bawa `sensor_unit` device terpilih dalam `query.sensorUnit` →
+- DEPLOY (14:2x MYT): backend `402490e` (pull + restart, penulisan live_tracking/devices disahkan) dan frontend `e229e80` (backup
+  `~/rollback/public-before-e229e80.tgz`; bundle `index-Bd0UGv8R.js` dilayan di lora2u.com/v2; server git = e229e80, status bersih; tiada restart
+  untuk frontend). Rollback frontend: `tar xzf ~/rollback/public-before-e229e80.tgz -C /var/www/loramesh/mesh_v2_git/backend/` + hard refresh.
+  Rollback kod: `sudo git reset --hard v1.0.4` + restart.
+- Historical berlabel (frontend DIDEPLOY, paparan BELUM disahkan pengguna): `HistoricalSidebar.jsx` bawa `sensor_unit` device terpilih dalam `query.sensorUnit` →
   `HistoricalPage.jsx` → `SensorTab.jsx` paparkan SATU KOLUM per parameter (header label + unit, nilai dinyahkod `decodeSensors`); tiada
   peta → kolum "Sensor data" mentah seperti dahulu. Hanya `vite build` + 16 ujian lulus; TIADA ujian komponen & belum dilihat di UI.
 - BELUM: sahkan unit/julat dengan datasheet vendor; sahkan Historical di UI selepas deploy frontend; UI edit peta;
